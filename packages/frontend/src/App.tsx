@@ -1,5 +1,9 @@
+import { Routes, Route, Link } from 'react-router-dom';
+import { SignUp, SignIn } from 'components/sign';
+
 export const App = () => (
-  <div>
-    <p>TEST</p>
-  </div>
+  <Routes>
+    <Route path="/" element={<SignIn />} />
+    <Route path="/signup" element={<SignUp />} />
+  </Routes>
 );
