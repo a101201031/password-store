@@ -10,13 +10,7 @@ import Grid from '@mui/material/Grid';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import Container from '@mui/material/Container';
-
-interface SignUpInputTypes {
-  name: string;
-  email: string;
-  password: string;
-  confirmPassword: string;
-}
+import { SignUpInputTypes } from 'model';
 
 function SignUp() {
   const { control, handleSubmit } = useForm<SignUpInputTypes>();
@@ -50,51 +44,88 @@ function SignUp() {
         >
           <Grid container spacing={2}>
             <Grid item xs={12}>
-              <TextField
-                autoComplete="given-name"
-                name="firstName"
-                required
-                fullWidth
-                id="firstName"
-                label="First Name"
-                autoFocus
+              <Controller
+                name="name"
+                control={control}
+                defaultValue=""
+                render={({ field }) => (
+                  <TextField
+                    required
+                    fullWidth
+                    id="name"
+                    label="Name"
+                    autoComplete="name"
+                    autoFocus
+                    {...field}
+                  />
+                )}
               />
             </Grid>
             <Grid item xs={12}>
-              <TextField
-                required
-                fullWidth
-                id="lastName"
-                label="Last Name"
-                name="lastName"
-                autoComplete="family-name"
-              />
-            </Grid>
-            <Grid item xs={12}>
-              <TextField
-                required
-                fullWidth
-                id="email"
-                label="Email Address"
+              <Controller
                 name="email"
-                autoComplete="email"
+                control={control}
+                defaultValue=""
+                render={({ field }) => (
+                  <TextField
+                    required
+                    fullWidth
+                    id="email"
+                    label="Email Address"
+                    autoComplete="email"
+                    {...field}
+                  />
+                )}
               />
             </Grid>
             <Grid item xs={12}>
-              <TextField
-                required
-                fullWidth
+              <Controller
                 name="password"
-                label="Password"
-                type="password"
-                id="password"
-                autoComplete="new-password"
+                control={control}
+                defaultValue=""
+                render={({ field }) => (
+                  <TextField
+                    required
+                    fullWidth
+                    id="password"
+                    label="Password"
+                    type="password"
+                    autoComplete="new-password"
+                    {...field}
+                  />
+                )}
               />
             </Grid>
             <Grid item xs={12}>
-              <FormControlLabel
-                control={<Checkbox value="allowExtraEmails" color="primary" />}
-                label="I want to receive inspiration, marketing promotions and updates via email."
+              <Controller
+                name="confirmPassword"
+                control={control}
+                defaultValue=""
+                render={({ field }) => (
+                  <TextField
+                    required
+                    fullWidth
+                    id="confirmPassword"
+                    label="Confirm Password"
+                    type="password"
+                    autoComplete="new-password"
+                    {...field}
+                  />
+                )}
+              />
+            </Grid>
+            <Grid item xs={12}>
+              <Controller
+                name="infoAgreement"
+                control={control}
+                defaultValue={false}
+                rules={{ required: true }}
+                render={({ field }) => (
+                  <FormControlLabel
+                    control={<Checkbox color="primary" {...field} />}
+                    label="I want to receive inspiration, marketing promotions and updates via email."
+                  />
+                )}
               />
             </Grid>
           </Grid>
@@ -108,7 +139,7 @@ function SignUp() {
           </Button>
           <Grid container justifyContent="flex-end">
             <Grid item>
-              <Link href="#" variant="body2">
+              <Link href="/" variant="body2">
                 Already have an account? Sign in
               </Link>
             </Grid>
