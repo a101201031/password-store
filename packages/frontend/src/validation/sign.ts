@@ -1,5 +1,4 @@
 import * as yup from 'yup';
-import { SignInInputTypes } from 'model';
 
 export const signUpSchema = yup
   .object({
@@ -10,7 +9,10 @@ export const signUpSchema = yup
       .required()
       .min(10)
       .max(32)
-      .matches(/(?=.*[0-9])/),
+      .matches(/(?=.*[0-9])/, 'At least one digit.')
+      .matches(/(?=.*[a-z])/, 'At least one lowercase character.')
+      .matches(/(?=.*[A-Z])/, 'At least one uppercase character.')
+      .matches(/(?=.*?[#?!@ $%^&*-])/, 'At least one special character'),
     confirmPassword: yup
       .string()
       .required()

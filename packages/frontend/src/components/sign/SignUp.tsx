@@ -1,19 +1,29 @@
 import { useForm, Controller, SubmitHandler } from 'react-hook-form';
-import Avatar from '@mui/material/Avatar';
-import Button from '@mui/material/Button';
-import CssBaseline from '@mui/material/CssBaseline';
-import TextField from '@mui/material/TextField';
-import FormControlLabel from '@mui/material/FormControlLabel';
-import Checkbox from '@mui/material/Checkbox';
-import Link from '@mui/material/Link';
-import Grid from '@mui/material/Grid';
-import Box from '@mui/material/Box';
-import Typography from '@mui/material/Typography';
-import Container from '@mui/material/Container';
+import { yupResolver } from '@hookform/resolvers/yup';
+import {
+  Avatar,
+  Button,
+  CssBaseline,
+  TextField,
+  FormControlLabel,
+  Checkbox,
+  Link,
+  Grid,
+  Box,
+  Typography,
+  Container,
+} from '@mui/material';
 import { SignUpInputTypes } from 'model';
+import { signUpSchema } from 'validation';
 
 function SignUp() {
-  const { control, handleSubmit } = useForm<SignUpInputTypes>();
+  const {
+    control,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<SignUpInputTypes>({
+    resolver: yupResolver(signUpSchema),
+  });
 
   const onSubmit: SubmitHandler<SignUpInputTypes> = (data) => {
     console.log(data);
@@ -56,6 +66,8 @@ function SignUp() {
                     label="Name"
                     autoComplete="name"
                     autoFocus
+                    error={!!errors.name}
+                    helperText={errors.name?.message}
                     {...field}
                   />
                 )}
@@ -73,6 +85,8 @@ function SignUp() {
                     id="email"
                     label="Email Address"
                     autoComplete="email"
+                    error={!!errors.email}
+                    helperText={errors.email?.message}
                     {...field}
                   />
                 )}
@@ -91,6 +105,8 @@ function SignUp() {
                     label="Password"
                     type="password"
                     autoComplete="new-password"
+                    error={!!errors.password}
+                    helperText={errors.password?.message}
                     {...field}
                   />
                 )}
@@ -109,23 +125,34 @@ function SignUp() {
                     label="Confirm Password"
                     type="password"
                     autoComplete="new-password"
+                    error={!!errors.confirmPassword}
+                    helperText={errors.confirmPassword?.message}
                     {...field}
                   />
                 )}
               />
             </Grid>
             <Grid item xs={12}>
-              <Controller
-                name="infoAgreement"
-                control={control}
-                defaultValue={false}
-                rules={{ required: true }}
-                render={({ field }) => (
-                  <FormControlLabel
-                    control={<Checkbox color="primary" {...field} />}
-                    label="I want to receive inspiration, marketing promotions and updates via email."
+              <FormControlLabel
+                control={
+                  <Controller
+                    name="infoAgreement"
+                    control={control}
+                    defaultValue={false}
+                    rules={{ required: true }}
+                    render={({ field }) => (
+                      <Checkbox color="primary" {...field} />
+                    )}
                   />
-                )}
+                }
+                label={
+                  <Typography
+                    color={errors.infoAgreement ? 'error' : 'defalut'}
+                  >
+                    I want to receive inspiration, marketing promotions and
+                    updates via email.
+                  </Typography>
+                }
               />
             </Grid>
           </Grid>
