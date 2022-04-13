@@ -10,7 +10,6 @@ import {
   DialogActions,
   DialogTitle,
   DialogContent,
-  DialogContentText,
 } from '@mui/material';
 
 function AccountCard() {
