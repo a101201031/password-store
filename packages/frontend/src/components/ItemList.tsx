@@ -5,32 +5,52 @@ import ListIcon from '@mui/icons-material/List';
 import LockOpenIcon from '@mui/icons-material/LockOpen';
 import PeopleIcon from '@mui/icons-material/People';
 import {
-  Button,
-  List,
-  ListItem,
   ListItemButton,
   ListItemIcon,
   ListItemText,
   ListSubheader,
+  SvgIcon,
   Typography,
 } from '@mui/material';
-import { Link } from 'react-router-dom';
+import type { LinkProps } from 'react-router-dom';
+import { Link, useMatch, useResolvedPath } from 'react-router-dom';
+import { theme } from 'theme';
+
+interface CustomLinkProps extends LinkProps {
+  primary: string;
+}
+
+function CustomLink({ children, to, primary, ...props }: CustomLinkProps) {
+  const activatedColor = theme.palette.primary.main;
+  const resolved = useResolvedPath(to);
+  const match = useMatch({ path: resolved.pathname, end: true });
+
+  return (
+    <ListItemButton component={Link} to={to} {...props} selected={!!match}>
+      <ListItemIcon>
+        <SvgIcon color={match ? 'primary' : 'inherit'}>{children}</SvgIcon>
+      </ListItemIcon>
+      <ListItemText
+        disableTypography
+        primary={
+          <Typography color={match ? activatedColor : 'inherit'}>
+            {primary}
+          </Typography>
+        }
+      />
+    </ListItemButton>
+  );
+}
 
 function MainListItems() {
   return (
     <>
-      <ListItemButton component={Link} to="/main">
-        <ListItemIcon>
-          <LockOpenIcon />
-        </ListItemIcon>
-        <ListItemText primary="Show Password" />
-      </ListItemButton>
-      <ListItemButton component={Link} to="/account-list">
-        <ListItemIcon>
-          <ListIcon />
-        </ListItemIcon>
-        <ListItemText primary="Account List" />
-      </ListItemButton>
+      <CustomLink to="/main" primary="Show Password">
+        <LockOpenIcon />
+      </CustomLink>
+      <CustomLink to="/accounts" primary="Account List">
+        <ListIcon />
+      </CustomLink>
       <ListItemButton>
         <ListItemIcon>
           <PeopleIcon />
