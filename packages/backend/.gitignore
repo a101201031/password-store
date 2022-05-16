@@ -7,3 +7,8 @@ jspm_packages
 
 # esbuild directories
 .esbuild
+
+# .env config directories
+.env
+.env.*
+firebaseAdmin.json

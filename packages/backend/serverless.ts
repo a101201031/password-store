@@ -1,11 +1,14 @@
 import type { AWS } from '@serverless/typescript';
-
-import hello from '@functions/hello';
+import handlers from 'src/handlers';
 
 const serverlessConfiguration: AWS = {
-  service: 'backend',
+  service: 'password-store-backend',
   frameworkVersion: '3',
-  plugins: ['serverless-esbuild'],
+  plugins: [
+    'serverless-offline',
+    'serverless-esbuild',
+    'serverless-dotenv-plugin',
+  ],
   provider: {
     name: 'aws',
     runtime: 'nodejs14.x',
@@ -20,7 +23,7 @@ const serverlessConfiguration: AWS = {
     },
   },
   // import the function via paths
-  functions: { hello },
+  functions: handlers,
   package: { individually: true },
   custom: {
     esbuild: {
@@ -32,6 +35,9 @@ const serverlessConfiguration: AWS = {
       define: { 'require.resolve': undefined },
       platform: 'node',
       concurrency: 10,
+    },
+    ['serverless-offline']: {
+      httpPort: 8000,
     },
   },
 };
