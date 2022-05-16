@@ -15,7 +15,8 @@
     "@middy/http-json-body-parser": "^2.5.3",
     "firebase": "^9.8.1",
     "firebase-admin": "^10.2.0",
-    "http-errors": "^2.0.0"
+    "http-errors": "^2.0.0",
+    "serverless-mysql": "^1.5.4"
   },
   "devDependencies": {
     "@serverless/typescript": "^3.0.0",
