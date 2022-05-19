@@ -13,6 +13,7 @@
     "@middy/core": "^2.5.3",
     "@middy/http-error-handler": "^2.5.7",
     "@middy/http-json-body-parser": "^2.5.3",
+    "bcryptjs": "^2.4.3",
     "firebase": "^9.8.1",
     "firebase-admin": "^10.2.0",
     "http-errors": "^2.0.0",
@@ -21,6 +22,7 @@
   "devDependencies": {
     "@serverless/typescript": "^3.0.0",
     "@types/aws-lambda": "^8.10.71",
+    "@types/bcryptjs": "^2.4.2",
     "@types/http-errors": "^1.8.2",
     "@types/node": "^14.14.25",
     "esbuild": "^0.14.11",
