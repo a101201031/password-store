@@ -15,18 +15,27 @@ import {
 } from '@mui/material';
 import { SignUpInputTypes } from 'model';
 import { signUpSchema } from 'validation';
+import { signUpUser } from 'auth';
 
 function SignUp() {
   const {
     control,
     handleSubmit,
     formState: { errors },
+    setError,
   } = useForm<SignUpInputTypes>({
     resolver: yupResolver(signUpSchema),
   });
 
-  const onSubmit: SubmitHandler<SignUpInputTypes> = (data) => {
-    console.log(data);
+  const onSubmit: SubmitHandler<SignUpInputTypes> = async (data) => {
+    const { name, email, password } = data;
+
+    const res = await signUpUser({ name, email, password });
+    if (res.token) {
+      localStorage.setItem('accessToken', res.token);
+    } else {
+      setError('email', { type: 'custom', message: res.message });
+    }
   };
 
   return (
