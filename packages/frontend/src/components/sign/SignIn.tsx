@@ -1,22 +1,56 @@
-import { useForm, Controller, SubmitHandler } from 'react-hook-form';
-import Avatar from '@mui/material/Avatar';
-import Button from '@mui/material/Button';
-import CssBaseline from '@mui/material/CssBaseline';
-import TextField from '@mui/material/TextField';
-import FormControlLabel from '@mui/material/FormControlLabel';
-import Checkbox from '@mui/material/Checkbox';
-import Link from '@mui/material/Link';
-import Paper from '@mui/material/Paper';
-import Box from '@mui/material/Box';
-import Grid from '@mui/material/Grid';
-import Typography from '@mui/material/Typography';
+import CloseIcon from '@mui/icons-material/Close';
+import {
+  Alert,
+  Avatar,
+  Box,
+  Button,
+  Checkbox,
+  Collapse,
+  CssBaseline,
+  FormControlLabel,
+  Grid,
+  IconButton,
+  Link,
+  Paper,
+  TextField,
+  Typography,
+} from '@mui/material';
+import { signInUser } from 'auth';
 import { SignInInputTypes } from 'model';
+import { useState } from 'react';
+import { Controller, SubmitHandler, useForm } from 'react-hook-form';
+import type { Location } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
+
+type CustomLocationType = Omit<Location, 'state'> & {
+  state?: { from?: { pathname: string } };
+};
+
+interface AlertStateType {
+  open: boolean;
+  message?: string;
+}
 
 function SignIn() {
-  const { control, handleSubmit } = useForm<SignInInputTypes>();
+  const { control, handleSubmit, resetField } = useForm<SignInInputTypes>();
+  const [alertState, setAlertState] = useState<AlertStateType>({
+    open: false,
+  });
+  let navigate = useNavigate();
+  let location = useLocation() as CustomLocationType;
 
-  const onSubmit: SubmitHandler<SignInInputTypes> = (data) => {
-    console.log(data);
+  const from = location.state?.from?.pathname || '/';
+  const onSubmit: SubmitHandler<SignInInputTypes> = async (data) => {
+    const { email, password } = data;
+
+    const res = await signInUser({ email, password });
+    if (res.token) {
+      localStorage.setItem('accessToken', res.token);
+      navigate(from);
+    } else {
+      resetField('password');
+      setAlertState({ open: true, message: res.message });
+    }
   };
 
   return (
@@ -54,6 +88,25 @@ function SignIn() {
           <Typography component="h1" variant="h5">
             Sign in
           </Typography>
+          <Collapse in={alertState.open}>
+            <Alert
+              action={
+                <IconButton
+                  aria-label="close"
+                  size="small"
+                  onClick={() => {
+                    setAlertState({ open: false });
+                  }}
+                >
+                  <CloseIcon fontSize="inherit" />
+                </IconButton>
+              }
+              sx={{ mb: 2 }}
+              severity="error"
+            >
+              {alertState.message}
+            </Alert>
+          </Collapse>
           <Box
             component="form"
             noValidate
