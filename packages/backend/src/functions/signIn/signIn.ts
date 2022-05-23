@@ -12,23 +12,24 @@ import {
 import { Unauthorized } from 'http-errors';
 import schema from './schema';
 
-const signInFunction: ValidatedEventAPIGatewayProxyEvent<typeof schema> =
-  async (event) => {
-    const { email, password } = event.body;
-    const auth = getAuth();
-    try {
-      await setPersistence(auth, browserSessionPersistence);
-      const { user } = await signInWithEmailAndPassword(auth, email, password);
-      return formatJSONResponse({ token: await user.getIdToken() });
-    } catch (e) {
-      const err = e as FirebaseError;
-      if (
-        err.code === 'auth/wrong-password' ||
-        err.code === 'auth/user-not-found'
-      ) {
-        throw new Unauthorized('Incorrect email or password.');
-      }
+const signInFunction: ValidatedEventAPIGatewayProxyEvent<
+  typeof schema.properties.body
+> = async (event) => {
+  const { email, password } = event.body;
+  const auth = getAuth();
+  try {
+    await setPersistence(auth, browserSessionPersistence);
+    const { user } = await signInWithEmailAndPassword(auth, email, password);
+    return formatJSONResponse({ token: await user.getIdToken() });
+  } catch (e) {
+    const err = e as FirebaseError;
+    if (
+      err.code === 'auth/wrong-password' ||
+      err.code === 'auth/user-not-found'
+    ) {
+      throw new Unauthorized('Incorrect email or password.');
     }
-  };
+  }
+};
 
-export const signIn = middyfy(signInFunction);
+export const signIn = middyfy({ handler: signInFunction, inputSchema: schema });

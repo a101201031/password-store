@@ -1,8 +1,13 @@
 export default {
   type: 'object',
   properties: {
-    email: { type: 'string' },
-    password: { type: 'string' },
+    body: {
+      type: 'object',
+      properties: {
+        email: { type: 'string' },
+        password: { type: 'string' },
+      },
+      required: ['email', 'password'],
+    },
   },
-  required: ['email', 'password'],
 } as const;
