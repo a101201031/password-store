@@ -10,10 +10,10 @@ import {
   signInWithEmailAndPassword,
 } from 'firebase/auth';
 import { Unauthorized } from 'http-errors';
-import schema from './schema';
+import { signInSchema } from '@apiSchema';
 
 const signInFunction: ValidatedEventAPIGatewayProxyEvent<
-  typeof schema.properties.body
+  typeof signInSchema.properties.body
 > = async (event) => {
   const { email, password } = event.body;
   const auth = getAuth();
@@ -32,4 +32,7 @@ const signInFunction: ValidatedEventAPIGatewayProxyEvent<
   }
 };
 
-export const signIn = middyfy({ handler: signInFunction, inputSchema: schema });
+export const signIn = middyfy({
+  handler: signInFunction,
+  inputSchema: signInSchema,
+});

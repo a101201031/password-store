@@ -1,15 +1,15 @@
 import type { ValidatedEventAPIGatewayProxyEvent } from '@libs/api-gateway';
 import { formatJSONResponse } from '@libs/api-gateway';
 import { middyfy } from '@libs/lambda';
-import { toHash } from '@util/crypto';
+import { toHash } from '@util/userHash';
 import '@util/firebase';
 import { query, transaction } from '@util/mysql';
 import { createUserWithEmailAndPassword, getAuth } from 'firebase/auth';
 import { BadRequest, InternalServerError } from 'http-errors';
-import schema from './schema';
+import { signUpSchema } from '@apiSchema';
 
 const signUpFunction: ValidatedEventAPIGatewayProxyEvent<
-  typeof schema.properties.body
+  typeof signUpSchema.properties.body
 > = async (event) => {
   const { name, email, password } = event.body;
   let result = await query({
@@ -40,4 +40,7 @@ const signUpFunction: ValidatedEventAPIGatewayProxyEvent<
   }
 };
 
-export const signUp = middyfy({ handler: signUpFunction, inputSchema: schema });
+export const signUp = middyfy({
+  handler: signUpFunction,
+  inputSchema: signUpSchema,
+});

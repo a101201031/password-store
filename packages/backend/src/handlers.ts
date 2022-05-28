@@ -1,10 +1,9 @@
 import { handlerPath } from '@libs/handler-resolver';
-import signInSchema from '@functions/signIn/schema';
-import signUpSchema from '@functions/signUp/schema';
+import { signUpSchema, signInSchema } from '@apiSchema';
 
 export default {
   signUp: {
-    handler: `${handlerPath(__dirname)}/functions/signUp/signUp.signUp`,
+    handler: `${handlerPath(__dirname)}/functions/signUp.signUp`,
     events: [
       {
         http: {
@@ -20,7 +19,7 @@ export default {
     ],
   },
   signIn: {
-    handler: `${handlerPath(__dirname)}/functions/signIn/signIn.signIn`,
+    handler: `${handlerPath(__dirname)}/functions/signIn.signIn`,
     events: [
       {
         http: {
