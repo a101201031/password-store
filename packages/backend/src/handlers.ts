@@ -1,5 +1,5 @@
 import { handlerPath } from '@libs/handler-resolver';
-import { signUpSchema, signInSchema } from '@apiSchema';
+import { signUpSchema, signInSchema, groupSchema } from '@apiSchema';
 
 export default {
   signUp: {
@@ -28,6 +28,38 @@ export default {
           request: {
             schemas: {
               'application/json': signInSchema,
+            },
+          },
+        },
+      },
+    ],
+  },
+  createGroup: {
+    handler: `${handlerPath(__dirname)}/functions/group.createGroup`,
+    events: [
+      {
+        http: {
+          method: 'post',
+          path: 'group',
+          request: {
+            schemas: {
+              'application/json': groupSchema,
+            },
+          },
+        },
+      },
+    ],
+  },
+  deleteGroup: {
+    handler: `${handlerPath(__dirname)}/functions/group.deleteGroup`,
+    events: [
+      {
+        http: {
+          method: 'delete',
+          path: 'group',
+          request: {
+            schemas: {
+              'application/json': groupSchema,
             },
           },
         },
