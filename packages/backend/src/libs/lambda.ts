@@ -2,7 +2,7 @@ import middy from '@middy/core';
 import middyValidator from '@middy/validator';
 import middyJsonBodyParser from '@middy/http-json-body-parser';
 import middyErrorHandler from '@middy/http-error-handler';
-import { authorizer } from '@middleware/authorizer';
+import { authorizer } from '@middleware';
 
 interface MiddfyParams {
   handler: any;

@@ -4,9 +4,10 @@
     "paths": {
       "@functions/*": ["src/functions/*"],
       "@libs/*": ["src/libs/*"],
-      "@model/*": ["src/model/*"],
+      "@model": ["src/model/index"],
       "@util/*": ["src/util/*"],
-      "@middleware/*": ["src/middleware/*"]
+      "@middleware": ["src/middleware/index"],
+      "@apiSchema": ["src/apiSchema/index"]
     }
   }
 }
