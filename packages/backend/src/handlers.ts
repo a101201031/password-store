@@ -50,6 +50,17 @@ export default {
       },
     ],
   },
+  readGroup: {
+    handler: `${handlerPath(__dirname)}/functions/group.readGroup`,
+    events: [
+      {
+        http: {
+          method: 'get',
+          path: 'group',
+        },
+      },
+    ],
+  },
   deleteGroup: {
     handler: `${handlerPath(__dirname)}/functions/group.deleteGroup`,
     events: [

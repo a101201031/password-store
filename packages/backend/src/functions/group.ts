@@ -4,6 +4,7 @@ import { formatJSONResponse } from '@libs/api-gateway';
 import { authMiddyfy } from '@libs/lambda';
 import { firebaseAdmin } from '@util/firebaseAdmin';
 import { query, transaction } from '@util/mysql';
+import type { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
 import cuid from 'cuid';
 import { BadRequest } from 'http-errors';
 
@@ -32,6 +33,18 @@ const createFunction: ValidatedEventAPIGatewayProxyEvent<
   return formatJSONResponse({ message: 'success' });
 };
 
+const readFunction = async (
+  event: APIGatewayProxyEvent,
+): Promise<APIGatewayProxyResult> => {
+  const idToken = event.headers.Authorization.split(' ')[1];
+  const { uid } = await firebaseAdmin.auth().verifyIdToken(idToken);
+  let groups = await query({
+    sql: 'SELECT gid, group_name FROM account_group WHERE uid = ?',
+    values: [uid],
+  });
+  return formatJSONResponse({ groups, message: 'success' });
+};
+
 const deleteFunction: ValidatedEventAPIGatewayProxyEvent<
   typeof groupSchema.properties.body
 > = async (event) => {
@@ -57,6 +70,10 @@ const deleteFunction: ValidatedEventAPIGatewayProxyEvent<
 export const deleteGroup = authMiddyfy({
   handler: deleteFunction,
   inputSchema: groupSchema,
+});
+
+export const readGroup = authMiddyfy({
+  handler: readFunction,
 });
 
 export const createGroup = authMiddyfy({
