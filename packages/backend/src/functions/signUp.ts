@@ -4,7 +4,7 @@ import { formatJSONResponse } from '@libs/api-gateway';
 import { middyfy } from '@libs/lambda';
 import '@util/firebase';
 import { query, transaction } from '@util/mysql';
-import { toHash } from '@util/userHash';
+import { makeUserHash, oneWayEncrypt } from '@util/crypto';
 import cuid from 'cuid';
 import { createUserWithEmailAndPassword, getAuth } from 'firebase/auth';
 import { BadRequest, InternalServerError } from 'http-errors';
@@ -28,11 +28,12 @@ const signUpFunction: ValidatedEventAPIGatewayProxyEvent<
       email,
       password,
     );
-    const hash = await toHash(password);
-    let result = await transaction()
+    const enPassword = await oneWayEncrypt(password);
+    const hashKey = await makeUserHash(enPassword);
+    await transaction()
       .query({
-        sql: 'INSERT INTO user(email, uid, user_name, password, last_password_change) VALUES(?, ?, ?, ?, SYSDATE())',
-        values: [email, user.uid, name, hash],
+        sql: 'INSERT INTO user(email, uid, user_name, password, hash_key, last_password_change) VALUES(?, ?, ?, ?, ?, SYSDATE())',
+        values: [email, user.uid, name, enPassword, hashKey],
       })
       .query({
         sql: 'INSERT INTO account_group(uid, gid, group_name) VALUES(?, ?, ?)',
