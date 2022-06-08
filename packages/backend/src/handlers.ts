@@ -116,4 +116,15 @@ export default {
       },
     ],
   },
+  readAccountList: {
+    handler: `${handlerPath(__dirname)}/functions/accountList.readAccountList`,
+    events: [
+      {
+        http: {
+          method: 'get',
+          path: 'accounts',
+        },
+      },
+    ],
+  },
 };
