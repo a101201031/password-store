@@ -98,4 +98,22 @@ export default {
       },
     ],
   },
+  readAccount: {
+    handler: `${handlerPath(__dirname)}/functions/account.readAccount`,
+    events: [
+      {
+        http: {
+          method: 'get',
+          path: 'account/{aid}',
+          request: {
+            parameters: {
+              paths: {
+                aid: true,
+              },
+            },
+          },
+        },
+      },
+    ],
+  },
 };

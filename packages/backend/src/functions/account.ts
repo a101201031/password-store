@@ -6,6 +6,7 @@ import type { UserModel } from '@model';
 import { aesEncrypt } from '@util/crypto';
 import { firebaseAdmin } from '@util/firebaseAdmin';
 import { query, transaction } from '@util/mysql';
+import type { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
 import cuid from 'cuid';
 import { BadRequest } from 'http-errors';
 
@@ -47,7 +48,7 @@ const createFunction: ValidatedEventAPIGatewayProxyEvent<
       sql: 'SELECT A.aid FROM account A INNER JOIN account_group AG ON A.gid = AG.gid AND AG.uid = ? WHERE A.aid = ?',
       values: [uid, authentication],
     });
-    if (!result) {
+    if (!result[0]) {
       throw new BadRequest('OAuth service not found');
     }
     await transaction()
@@ -61,7 +62,29 @@ const createFunction: ValidatedEventAPIGatewayProxyEvent<
   return formatJSONResponse({ message: 'success' });
 };
 
+const readFunction = async (
+  event: APIGatewayProxyEvent,
+): Promise<APIGatewayProxyResult> => {
+  const { uid } = await firebaseAdmin
+    .auth()
+    .verifyIdToken(event.headers.Authorization.split(' ')[1]);
+  const { aid } = event.pathParameters;
+  let result = await query({
+    sql: 'SELECT A.aid, A.gid, A.service_name, A.service_account, A.authentication, A.updated_at, A.created_at FROM account A INNER JOIN account_group AG ON A.gid = AG.gid AND AG.uid = ? WHERE A.aid = ?',
+    values: [uid, aid],
+  });
+  if (!result[0]) {
+    throw new BadRequest('Account not found');
+  }
+
+  return formatJSONResponse({ message: 'success', result });
+};
+
 export const createAccount = authMiddyfy({
   handler: createFunction,
   inputSchema: accountSchema,
+});
+
+export const readAccount = authMiddyfy({
+  handler: readFunction,
 });
