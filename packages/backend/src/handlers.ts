@@ -3,7 +3,8 @@ import {
   signUpSchema,
   signInSchema,
   groupSchema,
-  accountSchema,
+  accountCreateSchema,
+  accountUpdateSchema,
 } from '@apiSchema';
 
 export default {
@@ -91,7 +92,7 @@ export default {
           path: 'account',
           request: {
             schemas: {
-              'application/json': accountSchema,
+              'application/json': accountCreateSchema,
             },
           },
         },
@@ -110,6 +111,22 @@ export default {
               paths: {
                 aid: true,
               },
+            },
+          },
+        },
+      },
+    ],
+  },
+  updateAccount: {
+    handler: `${handlerPath(__dirname)}/functions/account.updateAccount`,
+    events: [
+      {
+        http: {
+          method: 'put',
+          path: 'account',
+          request: {
+            schemas: {
+              'application/json': accountUpdateSchema,
             },
           },
         },

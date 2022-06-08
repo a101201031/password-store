@@ -1,8 +1,8 @@
-import { accountSchema } from '@apiSchema';
+import { accountCreateSchema, accountUpdateSchema } from '@apiSchema';
 import type { ValidatedEventAPIGatewayProxyEvent } from '@libs/api-gateway';
 import { formatJSONResponse } from '@libs/api-gateway';
 import { authMiddyfy } from '@libs/lambda';
-import type { UserModel } from '@model';
+import type { AccountModel, UserModel } from '@model';
 import { aesEncrypt } from '@util/crypto';
 import { firebaseAdmin } from '@util/firebaseAdmin';
 import { query, transaction } from '@util/mysql';
@@ -11,7 +11,7 @@ import cuid from 'cuid';
 import { BadRequest } from 'http-errors';
 
 const createFunction: ValidatedEventAPIGatewayProxyEvent<
-  typeof accountSchema.properties.body
+  typeof accountCreateSchema.properties.body
 > = async (event) => {
   const { gid, serviceName, serviceAccount } = event.body;
   const password = event.body?.password;
@@ -70,7 +70,7 @@ const readFunction = async (
     .verifyIdToken(event.headers.Authorization.split(' ')[1]);
   const { aid } = event.pathParameters;
   let result = await query({
-    sql: 'SELECT A.aid, A.gid, A.service_name, A.service_account, A.authentication, A.updated_at, A.created_at FROM account A INNER JOIN account_group AG ON A.gid = AG.gid AND AG.uid = ? WHERE A.aid = ?',
+    sql: 'SELECT A.aid, A.gid, A.service_name, A.service_account, A.authentication, A.password_last_change, A.updated_at, A.created_at FROM account A INNER JOIN account_group AG ON A.gid = AG.gid AND AG.uid = ? WHERE A.aid = ?',
     values: [uid, aid],
   });
   if (!result[0]) {
@@ -80,11 +80,82 @@ const readFunction = async (
   return formatJSONResponse({ message: 'success', result });
 };
 
+const updateFunction: ValidatedEventAPIGatewayProxyEvent<
+  typeof accountUpdateSchema.properties.body
+> = async (event) => {
+  const { body } = event;
+  const { uid } = await firebaseAdmin
+    .auth()
+    .verifyIdToken(event.headers.Authorization.split(' ')[1]);
+
+  type OriginAccountTypes = Pick<
+    AccountModel,
+    'aid' | 'gid' | 'service_account' | 'authentication' | 'password'
+  >;
+  let result: OriginAccountTypes[] = await query({
+    sql: 'SELECT A.aid, A.gid, A.service_account, A.authentication, A.password FROM account a INNER JOIN account_group AG ON AG.gid = A.gid AND AG.uid = ? WHERE A.aid = ?',
+    values: [uid, body.aid],
+  });
+  if (!result[0]) {
+    throw new BadRequest('Account not found');
+  }
+
+  const originAccount = result[0];
+
+  const modify = {};
+  if (body.gid && body.gid !== originAccount.gid) {
+    let result = await query({
+      sql: 'SELECT gid FROM account_group WHERE uid = ? AND gid = ?',
+      values: [uid, body.gid],
+    });
+    if (!result[0]) {
+      throw new BadRequest('Group not found');
+    }
+    modify['gid'] = body.gid;
+  }
+  if (
+    body.authentication &&
+    body.authentication !== originAccount.authentication &&
+    body.authentication !== 'standalone'
+  ) {
+    let result = await query({
+      sql: 'SELECT A.aid FROM account A INNER JOIN account_group AG ON A.gid = AG.gid AND AG.uid = ? WHERE A.aid = ?',
+      values: [uid, body.authentication],
+    });
+    if (!result[0] || result[0].aid === body.aid) {
+      throw new BadRequest('OAuth service invalid');
+    }
+    modify['authentication'] = body.authentication;
+  } else if (body.authentication && body.authentication === 'standalone') {
+    modify['authenticaiton'] = body.authentication;
+  }
+
+  const updateQuery = {
+    sql: 'UPDATE account SET ',
+    values: [],
+  };
+  Object.keys(modify).forEach((val, idx, arr) => {
+    updateQuery.sql += idx === arr.length - 1 ? `${val} = ? ` : `${val} = ?, `;
+    updateQuery.values.push(modify[val]);
+  });
+  updateQuery.sql += 'WHERE aid = ?';
+  updateQuery.values.push(body.aid);
+
+  await transaction().query(updateQuery).commit();
+
+  return formatJSONResponse({ message: 'success', modify });
+};
+
 export const createAccount = authMiddyfy({
   handler: createFunction,
-  inputSchema: accountSchema,
+  inputSchema: accountCreateSchema,
 });
 
 export const readAccount = authMiddyfy({
   handler: readFunction,
+});
+
+export const updateAccount = authMiddyfy({
+  handler: updateFunction,
+  inputSchema: accountUpdateSchema,
 });
