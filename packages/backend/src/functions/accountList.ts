@@ -11,7 +11,11 @@ const readFunction = async (
   type QueryReturnTypes = Pick<AccountGroupModel, 'gid' | 'group_name'> &
     Omit<
       AccountModel,
-      'password' | 'created_at' | 'updated_at' | 'authentication'
+      | 'password'
+      | 'password_last_change'
+      | 'created_at'
+      | 'updated_at'
+      | 'authentication'
     >;
 
   const { uid } = await firebaseAdmin
