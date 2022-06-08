@@ -1,5 +1,10 @@
 import { handlerPath } from '@libs/handler-resolver';
-import { signUpSchema, signInSchema, groupSchema } from '@apiSchema';
+import {
+  signUpSchema,
+  signInSchema,
+  groupSchema,
+  accountSchema,
+} from '@apiSchema';
 
 export default {
   signUp: {
@@ -71,6 +76,22 @@ export default {
           request: {
             schemas: {
               'application/json': groupSchema,
+            },
+          },
+        },
+      },
+    ],
+  },
+  createAccount: {
+    handler: `${handlerPath(__dirname)}/functions/account.createAccount`,
+    events: [
+      {
+        http: {
+          method: 'post',
+          path: 'account',
+          request: {
+            schemas: {
+              'application/json': accountSchema,
             },
           },
         },
