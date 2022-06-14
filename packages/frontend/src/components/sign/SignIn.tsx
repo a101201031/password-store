@@ -15,41 +15,57 @@ import {
   TextField,
   Typography,
 } from '@mui/material';
-import { signInUser } from 'auth';
-import { SignInInputTypes } from 'model';
+import type { AxiosError } from 'axios';
+import axios from 'axios';
+import { fetcher } from 'helper';
 import { useState } from 'react';
 import { Controller, SubmitHandler, useForm } from 'react-hook-form';
 import type { Location } from 'react-router-dom';
 import { useLocation, useNavigate } from 'react-router-dom';
+import { useRecoilState } from 'recoil';
+import { accessTokenAtom } from 'store';
 
-type CustomLocationType = Omit<Location, 'state'> & {
+type CustomLocationTypes = Omit<Location, 'state'> & {
   state?: { from?: { pathname: string } };
 };
 
+interface SignInFormTypes {
+  email: string;
+  password: string;
+}
 interface AlertStateType {
   open: boolean;
   message?: string;
 }
 
 function SignIn() {
-  const { control, handleSubmit, resetField } = useForm<SignInInputTypes>();
+  const { control, handleSubmit, resetField } = useForm<SignInFormTypes>();
   const [alertState, setAlertState] = useState<AlertStateType>({
     open: false,
   });
   let navigate = useNavigate();
-  let location = useLocation() as CustomLocationType;
-
+  let location = useLocation() as CustomLocationTypes;
   const from = location.state?.from?.pathname || '/';
-  const onSubmit: SubmitHandler<SignInInputTypes> = async (data) => {
-    const { email, password } = data;
 
-    const res = await signInUser({ email, password });
-    if (res.token) {
-      localStorage.setItem('accessToken', res.token);
+  const [token, setToken] = useRecoilState(accessTokenAtom);
+
+  const onSubmit: SubmitHandler<SignInFormTypes> = async (data) => {
+    const { email, password } = data;
+    try {
+      const { token } = await fetcher.post<{ token: string }>({
+        path: '/sign-in',
+        bodyParams: { email, password },
+      });
+      localStorage.setItem('accessToken', token);
+      setToken(token);
       navigate(from);
-    } else {
-      resetField('password');
-      setAlertState({ open: true, message: res.message });
+    } catch (e) {
+      const err = e as Error | AxiosError<string>;
+      if (axios.isAxiosError(err) && err.response) {
+        resetField('password');
+        const alertMsg = err.response.data || 'Unknown error.';
+        setAlertState({ open: true, message: alertMsg });
+      }
     }
   };
 

@@ -1,21 +1,38 @@
-import { useForm, Controller, SubmitHandler } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import {
   Avatar,
-  Button,
-  CssBaseline,
-  TextField,
-  FormControlLabel,
-  Checkbox,
-  Link,
-  Grid,
   Box,
-  Typography,
+  Button,
+  Checkbox,
   Container,
+  CssBaseline,
+  FormControlLabel,
+  Grid,
+  Link,
+  TextField,
+  Typography,
 } from '@mui/material';
-import { SignUpInputTypes } from 'model';
+import type { AxiosError } from 'axios';
+import axios from 'axios';
+import { fetcher } from 'helper';
+import { Controller, SubmitHandler, useForm } from 'react-hook-form';
+import type { Location } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
+import { useRecoilState } from 'recoil';
+import { accessTokenAtom } from 'store';
 import { signUpSchema } from 'validation';
-import { signUpUser } from 'auth';
+
+type CustomLocationTypes = Omit<Location, 'state'> & {
+  state?: { from?: { pathname: string } };
+};
+
+interface SignUpFormTypes {
+  name: string;
+  email: string;
+  password: string;
+  confirmPassword: string;
+  infoAgreement: boolean;
+}
 
 function SignUp() {
   const {
@@ -23,18 +40,31 @@ function SignUp() {
     handleSubmit,
     formState: { errors },
     setError,
-  } = useForm<SignUpInputTypes>({
+  } = useForm<SignUpFormTypes>({
     resolver: yupResolver(signUpSchema),
   });
+  let navigate = useNavigate();
+  let location = useLocation() as CustomLocationTypes;
+  const from = location.state?.from?.pathname || '/';
 
-  const onSubmit: SubmitHandler<SignUpInputTypes> = async (data) => {
+  const [token, setToken] = useRecoilState(accessTokenAtom);
+
+  const onSubmit: SubmitHandler<SignUpFormTypes> = async (data) => {
     const { name, email, password } = data;
-
-    const res = await signUpUser({ name, email, password });
-    if (res.token) {
-      localStorage.setItem('accessToken', res.token);
-    } else {
-      setError('email', { type: 'custom', message: res.message });
+    try {
+      const { token } = await fetcher.post<{ token: string }>({
+        path: '/sign-up',
+        bodyParams: { name, email, password },
+      });
+      localStorage.setItem('accessToken', token);
+      setToken(token);
+      navigate(from);
+    } catch (e) {
+      const err = e as Error | AxiosError<string>;
+      if (axios.isAxiosError(err) && err.response) {
+        const errMsg = err.response.data || '';
+        setError('email', { type: 'custom', message: errMsg });
+      }
     }
   };
 

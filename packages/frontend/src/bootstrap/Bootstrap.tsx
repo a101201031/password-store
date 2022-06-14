@@ -3,12 +3,14 @@ import { App } from 'App';
 import { theme } from 'theme';
 import { BrowserRouter as Router } from 'react-router-dom';
 import { ThemeProvider } from '@mui/material/styles';
-import '../firebase';
+import { RecoilRoot } from 'recoil';
 
 export const Bootstrap: FC = () => (
   <ThemeProvider theme={theme}>
     <Router>
-      <App />
+      <RecoilRoot>
+        <App />
+      </RecoilRoot>
     </Router>
   </ThemeProvider>
 );
