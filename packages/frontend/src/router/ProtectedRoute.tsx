@@ -1,5 +1,6 @@
-import { useEffect } from 'react';
-import { Navigate, Outlet, useLocation, useNavigate } from 'react-router-dom';
+import { Navigate, Outlet, useLocation } from 'react-router-dom';
+import { useRecoilValue } from 'recoil';
+import { onSignInSltr } from 'store';
 
 interface ProtectedRouteProps {
   redirectPath?: string;
@@ -7,7 +8,8 @@ interface ProtectedRouteProps {
 
 function ProtectedRoute({ redirectPath = '/signin' }: ProtectedRouteProps) {
   let location = useLocation();
-  if (!localStorage.getItem('accessToken')) {
+  const onSignIn = useRecoilValue(onSignInSltr);
+  if (!onSignIn) {
     return <Navigate to={redirectPath} state={{ from: location }} replace />;
   }
 

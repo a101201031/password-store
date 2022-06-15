@@ -144,4 +144,15 @@ export default {
       },
     ],
   },
+  tokenValidator: {
+    handler: `${handlerPath(__dirname)}/functions/token.validator`,
+    events: [
+      {
+        http: {
+          method: 'get',
+          path: 'token',
+        },
+      },
+    ],
+  },
 };
