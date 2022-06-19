@@ -47,7 +47,7 @@ function SignIn() {
   let location = useLocation() as CustomLocationTypes;
   const from = location.state?.from?.pathname || '/';
 
-  const [token, setToken] = useRecoilState(accessTokenAtom);
+  const [accessToken, setAccessToken] = useRecoilState(accessTokenAtom);
 
   const onSubmit: SubmitHandler<SignInFormTypes> = async (data) => {
     const { email, password } = data;
@@ -57,7 +57,7 @@ function SignIn() {
         bodyParams: { email, password },
       });
       localStorage.setItem('accessToken', token);
-      setToken(token);
+      setAccessToken(token);
       navigate(from);
     } catch (e) {
       const err = e as Error | AxiosError<string>;

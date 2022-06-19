@@ -13,10 +13,12 @@ interface PostPutPayload {
   path: string;
   queryParams?: { [key: string]: string };
   bodyParams?: { [key: string]: any };
+  accessToken?: string;
 }
 interface GetDeletePayload {
   path: string;
   queryParams?: { [key: string]: string };
+  accessToken?: string;
 }
 
 const planeFetcher = axiosClient;
@@ -31,8 +33,11 @@ const queryParamsParser = (queryParams: { [key: string]: string } = {}) =>
     .value()
     .toString();
 
-const get = async <T = any>({ path, queryParams = {} }: GetDeletePayload) => {
-  const accessToken = localStorage.getItem('accessToken');
+const get = async <T = any>({
+  path,
+  queryParams = {},
+  accessToken,
+}: GetDeletePayload) => {
   const queryString = queryParamsParser(queryParams);
   const { data } = await axiosClient.get<T>(`${path}${queryString}`, {
     headers: {
@@ -46,8 +51,8 @@ const post = async <T = any>({
   path,
   queryParams = {},
   bodyParams = {},
+  accessToken,
 }: PostPutPayload) => {
-  const accessToken = localStorage.getItem('accessToken');
   const queryString = queryParamsParser(queryParams);
   const { data } = await axiosClient.post<T>(
     `${path}${queryString}`,
@@ -65,8 +70,8 @@ const put = async <T = any>({
   path,
   queryParams = {},
   bodyParams = {},
+  accessToken,
 }: PostPutPayload) => {
-  const accessToken = localStorage.getItem('accessToken');
   const queryString = queryParamsParser(queryParams);
   const { data } = await axiosClient.post<T>(
     `${path}${queryString}`,
@@ -80,8 +85,11 @@ const put = async <T = any>({
   return data;
 };
 
-const del = async <T = any>({ path, queryParams = {} }: GetDeletePayload) => {
-  const accessToken = localStorage.getItem('accessToken');
+const del = async <T = any>({
+  path,
+  queryParams = {},
+  accessToken,
+}: GetDeletePayload) => {
   const queryString = queryParamsParser(queryParams);
   const { data } = await axiosClient.delete<T>(`${path}${queryString}`, {
     headers: {
