@@ -10,9 +10,16 @@ import {
   DialogActions,
   DialogTitle,
   DialogContent,
+  Divider,
 } from '@mui/material';
 
-function AccountCard() {
+interface AccountCardProps {
+  serviceName: string;
+  serviceAccount: string;
+}
+
+function AccountCard(props: AccountCardProps) {
+  const { serviceName, serviceAccount } = props;
   const [open, setOpen] = useState(false);
   const handleClickOpen = () => {
     setOpen(true);
@@ -30,10 +37,6 @@ function AccountCard() {
         .catch(() => {
           alert('Failed to copy.');
         });
-    } else {
-      if (!document.queryCommandSupported('copy')) {
-        return alert('Clipboard is not supported. Please, check your browser.');
-      }
     }
   };
 
@@ -42,28 +45,23 @@ function AccountCard() {
       <CardActionArea onClick={handleClickOpen}>
         <CardMedia
           component="img"
-          height="140"
+          height="120px"
           image="/logo/google_logo.jpeg"
         />
         <CardContent>
+          <Divider />
           <Typography gutterBottom variant="h5" component="div" color="primary">
-            google
+            {serviceName}
           </Typography>
           <Typography variant="body2" color="text.secondary">
-            passwordStore@gmail.com
+            {serviceAccount}
           </Typography>
         </CardContent>
       </CardActionArea>
-      <Dialog
-        open={open}
-        onClose={handleClose}
-        aria-labelledby="draggable-dialog-title"
-        maxWidth="sm"
-        fullWidth={true}
-      >
-        <DialogTitle id="draggable-dialog-title">Google Account</DialogTitle>
+      <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth={true}>
+        <DialogTitle>{serviceName} Account</DialogTitle>
         <DialogContent dividers>
-          <Typography gutterBottom>passwordStore@gmail.com</Typography>
+          <Typography gutterBottom>{serviceAccount}</Typography>
           <Typography gutterBottom>Show Password</Typography>
         </DialogContent>
         <DialogActions>

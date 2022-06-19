@@ -1,53 +1,33 @@
-import { Container, Grid, Paper, Typography } from '@mui/material';
-import { AccountCard } from './AccountCard';
+import { Grid, Typography } from '@mui/material';
+import { AccountCard } from 'components';
+import { useRecoilValue } from 'recoil';
+import { accountListSltr } from 'store';
 
 function AccountList() {
+  const accountList = useRecoilValue(accountListSltr);
   return (
-    <Container maxWidth="xl" sx={{ mt: 4, mb: 4 }}>
-      <Grid container>
-        <Grid item xs={12}>
-          <Paper
-            sx={{
-              p: 2,
-              display: 'grid',
-            }}
-          >
-            <Typography component="h1">Edit Account</Typography>
-            <Grid
-              container
-              rowSpacing={1}
-              columnSpacing={{ xs: 1, sm: 2, md: 3 }}
-            >
-              <Grid item xs={4}>
-                <AccountCard />
-              </Grid>
-              <Grid item xs={4}>
-                <AccountCard />
-              </Grid>
-              <Grid item xs={4}>
-                <AccountCard />
-              </Grid>
-              <Grid item xs={4}>
-                <AccountCard />
-              </Grid>
-              <Grid item xs={4}>
-                <AccountCard />
-              </Grid>
-              <Grid item xs={4}>
-                <AccountCard />
-              </Grid>
-              <Grid item xs={4}>
-                <AccountCard />
-              </Grid>
-              <Grid item xs={4}>
-                <AccountCard />
-              </Grid>
+    <>
+      {accountList.map((v) => (
+        <Grid
+          container
+          rowSpacing={1}
+          columnSpacing={{ xs: 1, sm: 2, md: 3 }}
+          key={v.gid}
+        >
+          <Grid item xs={12} marginY={2}>
+            <Typography variant="h5">{v.groupName}</Typography>
+          </Grid>
+          {v.accounts.map((sv) => (
+            <Grid item xs={4} key={sv.aid}>
+              <AccountCard
+                serviceName={sv.serviceName}
+                serviceAccount={sv.serviceAccount}
+              />
             </Grid>
-          </Paper>
+          ))}
         </Grid>
-      </Grid>
-      {/* <Copyright sx={{ pt: 4 }} /> */}
-    </Container>
+      ))}
+    </>
   );
 }
 export { AccountList };

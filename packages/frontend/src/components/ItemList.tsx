@@ -45,7 +45,7 @@ function CustomLink({ children, to, primary, ...props }: CustomLinkProps) {
 function MainListItems() {
   return (
     <>
-      <CustomLink to="/main" primary="Show Password">
+      <CustomLink to="/" primary="Show Password">
         <LockOpenIcon />
       </CustomLink>
       <CustomLink to="/accounts" primary="Account List">

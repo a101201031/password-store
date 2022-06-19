@@ -1,16 +1,27 @@
-import { Routes, Route } from 'react-router-dom';
-import { SignUp, SignIn } from 'components/sign';
-import { Main } from 'components/Main';
-import { Accounts, AddAccount, ShowPassword } from 'components';
+import {
+  AccountBoard,
+  AccountEditBoard,
+  CircularIndicator,
+  Main,
+} from 'components';
+import { SignIn, SignUp } from 'components/sign';
+import { Suspense } from 'react';
+import { Route, Routes } from 'react-router-dom';
 import { ProtectedRoute } from 'router';
 
 export const App = () => (
   <Routes>
-    <Route path="/" element={<Main />}>
-      <Route element={<ProtectedRoute />}>
-        <Route index element={<ShowPassword />} />
-        <Route path="/accounts" element={<Accounts />} />
-        <Route path="/accounts/add" element={<AddAccount />} />
+    <Route
+      path="/"
+      element={
+        <Suspense fallback={<CircularIndicator />}>
+          <ProtectedRoute />
+        </Suspense>
+      }
+    >
+      <Route element={<Main />}>
+        <Route index element={<AccountBoard />} />
+        <Route path="/accounts" element={<AccountEditBoard />} />
       </Route>
     </Route>
     <Route path="/signin" element={<SignIn />} />
