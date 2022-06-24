@@ -1,20 +1,24 @@
 import AddIcon from '@mui/icons-material/Add';
+import CancelIcon from '@mui/icons-material/Cancel';
+import SearchIcon from '@mui/icons-material/Search';
 import {
   Button,
   Container,
   Divider,
   Grid,
+  IconButton,
   InputAdornment,
   Paper,
   TextField,
   Typography,
 } from '@mui/material';
-import { AccountList } from 'components';
-import { Suspense } from 'react';
+import axios from 'axios';
+import { AccountList, AsyncBoundary, CardIndicator, SignOut } from 'components';
 import type { ChangeEventHandler } from 'react';
+import { MouseEventHandler, Suspense, useRef } from 'react';
 import { Link } from 'react-router-dom';
-import { CardIndicator } from './Progress';
-import SearchIcon from '@mui/icons-material/Search';
+import { useRecoilState } from 'recoil';
+import { accountListFilterAtom } from 'store';
 
 function AccountBoard() {
   return (
@@ -29,7 +33,7 @@ function AccountBoard() {
           >
             <Grid
               container
-              sx={{ mb: 2 }}
+              sx={{ mb: 2, minHeight: '36px' }}
               wrap="nowrap"
               justifyContent="space-between"
             >
@@ -43,8 +47,18 @@ function AccountBoard() {
               <SearchFiled />
             </Grid>
             <Divider />
-            <Suspense
-              fallback={
+            <AsyncBoundary
+              errorFallback={({ error }) => {
+                if (
+                  axios.isAxiosError(error) &&
+                  error.response &&
+                  error.response.status === 401
+                ) {
+                  return <SignOut />;
+                }
+                return <h1>ERROR</h1>;
+              }}
+              suspenseFallback={
                 <Grid
                   container
                   rowSpacing={1}
@@ -56,7 +70,7 @@ function AccountBoard() {
               }
             >
               <AccountList />
-            </Suspense>
+            </AsyncBoundary>
           </Paper>
         </Grid>
       </Grid>
@@ -78,7 +92,7 @@ function AccountEditBoard() {
             >
               <Grid
                 container
-                sx={{ mb: 1 }}
+                sx={{ mb: 2, minHeight: '36px', maxHeight: '36px' }}
                 wrap="nowrap"
                 justifyContent="space-between"
               >
@@ -89,15 +103,28 @@ function AccountEditBoard() {
                 >
                   Edit Account
                 </Typography>
-                <Button
-                  component={Link}
-                  to="add"
-                  variant="outlined"
-                  startIcon={<AddIcon />}
+                <Grid
+                  container
+                  xs={6}
+                  columnSpacing={{ xs: 1, sm: 2, md: 3 }}
+                  justifyContent="end"
                 >
-                  Add Account
-                </Button>
+                  <Grid item>
+                    <SearchFiled />
+                  </Grid>
+                  <Grid item>
+                    <Button
+                      component={Link}
+                      to="add"
+                      variant="outlined"
+                      startIcon={<AddIcon />}
+                    >
+                      Add Account
+                    </Button>
+                  </Grid>
+                </Grid>
               </Grid>
+              <Divider />
               <Suspense
                 fallback={
                   <Grid
@@ -121,17 +148,39 @@ function AccountEditBoard() {
 }
 
 function SearchFiled() {
+  const inputRef = useRef<HTMLInputElement>(null);
+  const [filterValue, setFilterValue] = useRecoilState(accountListFilterAtom);
+  const handleChange: ChangeEventHandler<
+    HTMLTextAreaElement | HTMLInputElement
+  > = (e) => {
+    const { value } = e.target;
+    setFilterValue(value);
+  };
+
+  const handleClearIconClick: MouseEventHandler<HTMLButtonElement> = (e) => {
+    setFilterValue('');
+  };
+
   return (
     <TextField
+      ref={inputRef}
       id="accountId"
       InputProps={{
         startAdornment: (
           <InputAdornment position="start">
-            <SearchIcon />
+            {filterValue ? (
+              <IconButton sx={{ padding: 0 }} onClick={handleClearIconClick}>
+                <CancelIcon />
+              </IconButton>
+            ) : (
+              <SearchIcon />
+            )}
           </InputAdornment>
         ),
       }}
       variant="standard"
+      onChange={handleChange}
+      value={filterValue}
     />
   );
 }
