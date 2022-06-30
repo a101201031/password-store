@@ -5,7 +5,7 @@ export interface AccountModel {
   authentication: string | 'standalone';
   service_account: string;
   password: string;
-  password_last_Change: Date;
+  password_last_change: Date;
   updated_at: Date;
   created_at: Date;
 }

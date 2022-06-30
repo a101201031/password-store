@@ -34,20 +34,20 @@ const readFunction = async (
     if (groupIdx === -1) {
       groupInAccount.push({
         gid: val.gid,
-        groupName: val.group_name,
+        group_name: val.group_name,
         accounts: [
           {
             aid: val.aid,
-            serviceName: val.service_name,
-            serviceAccount: val.service_account,
+            service_name: val.service_name,
+            service_account: val.service_account,
           },
         ],
       });
     } else {
       groupInAccount[groupIdx].accounts.push({
         aid: val.aid,
-        serviceName: val.service_name,
-        serviceAccount: val.service_account,
+        service_name: val.service_name,
+        service_account: val.service_account,
       });
     }
   });

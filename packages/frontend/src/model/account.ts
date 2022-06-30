@@ -1,9 +1,11 @@
-import { HostTypes } from 'model';
-export interface AccountTypes {
-  host: HostTypes;
-  account_id: string;
-  password?: string;
-  created_date: Date;
-  last_change_date: Date;
-  password_score: number;
+export interface AccountModel {
+  aid: string;
+  gid: string;
+  service_name: string;
+  authentication: string | 'standalone';
+  service_account: string;
+  password: string;
+  password_last_change: Date;
+  updated_at: Date;
+  created_at: Date;
 }
