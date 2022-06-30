@@ -1,6 +1,6 @@
 import { Navigate, Outlet, useLocation } from 'react-router-dom';
 import { useRecoilValue } from 'recoil';
-import { onSignInSltr } from 'store';
+import { accessTokenAtom } from 'store';
 
 interface ProtectedRouteProps {
   redirectPath?: string;
@@ -8,8 +8,8 @@ interface ProtectedRouteProps {
 
 function ProtectedRoute({ redirectPath = '/signin' }: ProtectedRouteProps) {
   let location = useLocation();
-  const onSignIn = useRecoilValue(onSignInSltr);
-  if (!onSignIn) {
+  const accessToken = useRecoilValue(accessTokenAtom);
+  if (!accessToken) {
     return <Navigate to={redirectPath} state={{ from: location }} replace />;
   }
 

@@ -12,10 +12,9 @@ import {
   TextField,
   Typography,
 } from '@mui/material';
-import axios from 'axios';
-import { AccountList, AsyncBoundary, CardIndicator, SignOut } from 'components';
-import type { ChangeEventHandler } from 'react';
-import { MouseEventHandler, Suspense, useRef } from 'react';
+import { AccountList, AuthAsyncBoundary, CardIndicator } from 'components';
+import type { ChangeEventHandler, MouseEventHandler } from 'react';
+import { useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { useRecoilState } from 'recoil';
 import { accountListFilterAtom } from 'store';
@@ -47,16 +46,9 @@ function AccountBoard() {
               <SearchFiled />
             </Grid>
             <Divider />
-            <AsyncBoundary
-              errorFallback={({ error }) => {
-                if (
-                  axios.isAxiosError(error) &&
-                  error.response &&
-                  error.response.status === 401
-                ) {
-                  return <SignOut />;
-                }
-                return <h1>ERROR</h1>;
+            <AuthAsyncBoundary
+              errorFallback={(_) => {
+                return null;
               }}
               suspenseFallback={
                 <Grid
@@ -70,7 +62,7 @@ function AccountBoard() {
               }
             >
               <AccountList />
-            </AsyncBoundary>
+            </AuthAsyncBoundary>
           </Paper>
         </Grid>
       </Grid>
@@ -96,22 +88,20 @@ function AccountEditBoard() {
                 wrap="nowrap"
                 justifyContent="space-between"
               >
-                <Typography
-                  variant="h5"
-                  color="primary"
-                  sx={{ fontWeight: 'bold' }}
-                >
-                  Edit Account
-                </Typography>
+                <Grid item xs={6}>
+                  <Typography
+                    variant="h5"
+                    color="primary"
+                    sx={{ fontWeight: 'bold' }}
+                  >
+                    Edit Account
+                  </Typography>
+                </Grid>
                 <Grid
                   container
-                  xs={6}
                   columnSpacing={{ xs: 1, sm: 2, md: 3 }}
                   justifyContent="end"
                 >
-                  <Grid item>
-                    <SearchFiled />
-                  </Grid>
                   <Grid item>
                     <Button
                       component={Link}
@@ -122,11 +112,14 @@ function AccountEditBoard() {
                       Add Account
                     </Button>
                   </Grid>
+                  <Grid item>
+                    <SearchFiled />
+                  </Grid>
                 </Grid>
               </Grid>
               <Divider />
-              <Suspense
-                fallback={
+              <AuthAsyncBoundary
+                suspenseFallback={
                   <Grid
                     container
                     rowSpacing={1}
@@ -138,7 +131,7 @@ function AccountEditBoard() {
                 }
               >
                 <AccountList />
-              </Suspense>
+              </AuthAsyncBoundary>
             </Paper>
           </Grid>
         </Grid>
@@ -161,9 +154,13 @@ function SearchFiled() {
     setFilterValue('');
   };
 
+  const handleSearchIconClick: MouseEventHandler<HTMLButtonElement> = (e) => {
+    inputRef.current?.focus();
+  };
+
   return (
     <TextField
-      ref={inputRef}
+      inputRef={inputRef}
       id="accountId"
       InputProps={{
         startAdornment: (
@@ -173,7 +170,9 @@ function SearchFiled() {
                 <CancelIcon />
               </IconButton>
             ) : (
-              <SearchIcon />
+              <IconButton sx={{ padding: 0 }} onClick={handleSearchIconClick}>
+                <SearchIcon />
+              </IconButton>
             )}
           </InputAdornment>
         ),
