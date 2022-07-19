@@ -1,4 +1,5 @@
 import {
+  Account,
   AccountBoard,
   AccountEditBoard,
   CircularIndicator,
@@ -22,6 +23,7 @@ export const App = () => (
       <Route element={<Main />}>
         <Route index element={<AccountBoard />} />
         <Route path="/accounts" element={<AccountEditBoard />} />
+        <Route path="/account/:aid" element={<Account />} />
       </Route>
     </Route>
     <Route path="/signin" element={<SignIn />} />

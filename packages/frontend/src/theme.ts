@@ -4,6 +4,7 @@ const theme = createTheme({
   palette: {
     primary: {
       main: '#7b9acc',
+      contrastText: '#fcf6f5',
     },
     secondary: {
       main: '#fcf6f5',
@@ -11,6 +12,9 @@ const theme = createTheme({
     info: {
       main: '#fcf6f5',
     },
+  },
+  typography: {
+    fontFamily: ['Roboto', 'sans-serif'].join(','),
   },
 });
 

@@ -1,21 +1,23 @@
-import { useState } from 'react';
 import {
+  Button,
   Card,
   CardActionArea,
-  CardMedia,
   CardContent,
-  Typography,
-  Button,
+  CardMedia,
   Dialog,
   DialogActions,
-  DialogTitle,
   DialogContent,
+  DialogTitle,
   Divider,
+  Typography,
 } from '@mui/material';
+import { useState } from 'react';
+import { Link } from 'react-router-dom';
 
 interface AccountCardProps {
   serviceName: string;
   serviceAccount: string;
+  aid: string;
 }
 
 function AccountCard(props: AccountCardProps) {
@@ -74,4 +76,29 @@ function AccountCard(props: AccountCardProps) {
   );
 }
 
-export { AccountCard };
+function AccountEditCard(props: AccountCardProps) {
+  const { serviceName, serviceAccount, aid } = props;
+
+  return (
+    <Card sx={{ maxWidth: 360 }}>
+      <CardActionArea component={Link} to={`/account/${aid}`}>
+        <CardMedia
+          component="img"
+          height="120px"
+          image="/logo/google_logo.jpeg"
+        />
+        <CardContent>
+          <Divider />
+          <Typography gutterBottom variant="h5" component="div" color="primary">
+            {serviceName}
+          </Typography>
+          <Typography variant="body2" color="text.secondary">
+            {serviceAccount}
+          </Typography>
+        </CardContent>
+      </CardActionArea>
+    </Card>
+  );
+}
+
+export { AccountCard, AccountEditCard };

@@ -130,7 +130,7 @@ function AccountEditBoard() {
                   </Grid>
                 }
               >
-                <AccountList />
+                <AccountList mode="edit" />
               </AuthAsyncBoundary>
             </Paper>
           </Grid>

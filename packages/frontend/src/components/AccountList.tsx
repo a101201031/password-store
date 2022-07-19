@@ -1,9 +1,14 @@
 import { Grid, Typography } from '@mui/material';
-import { AccountCard } from 'components';
+import { AccountCard, AccountEditCard } from 'components';
 import { useRecoilValue } from 'recoil';
 import { filteredAccountListSltr } from 'store';
 
-function AccountList() {
+interface AccountListProps {
+  mode?: 'password' | 'edit';
+}
+
+function AccountList(props: AccountListProps) {
+  const { mode = 'password' } = props;
   const accountList = useRecoilValue(filteredAccountListSltr);
   return (
     <>
@@ -19,10 +24,19 @@ function AccountList() {
           </Grid>
           {v.accounts.map((sv) => (
             <Grid item xs={4} key={sv.aid}>
-              <AccountCard
-                serviceName={sv.service_name}
-                serviceAccount={sv.service_account}
-              />
+              {mode === 'password' ? (
+                <AccountCard
+                  serviceName={sv.service_name}
+                  serviceAccount={sv.service_account}
+                  aid={sv.aid}
+                />
+              ) : (
+                <AccountEditCard
+                  serviceName={sv.service_name}
+                  serviceAccount={sv.service_account}
+                  aid={sv.aid}
+                />
+              )}
             </Grid>
           ))}
         </Grid>

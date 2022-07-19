@@ -2,6 +2,7 @@ import { atom, selector, selectorFamily } from 'recoil';
 import { fetcher } from 'helper';
 import { AccountModel, AccountGroupModel } from 'model';
 import { accessTokenAtom } from './token';
+import { SelectorMapper } from 'store';
 
 interface AccountListTypes
   extends Pick<AccountGroupModel, 'gid' | 'group_name'> {
@@ -59,4 +60,31 @@ export const filteredAccountListSltr = selector({
 
     return filteredList;
   },
+});
+
+interface AccountInfoParam {
+  aid: string;
+}
+
+interface AccountInfoTypes extends Omit<AccountModel, 'password'> {}
+
+interface AccountInfoApiTypes {
+  message: string;
+  result: AccountInfoTypes;
+}
+
+export const accountInfoSltr = selectorFamily<
+  Omit<AccountModel, 'password'>,
+  SelectorMapper<AccountInfoParam>
+>({
+  key: 'accountInfoSltr',
+  get:
+    ({ aid }) =>
+    async ({ get }) => {
+      const { result } = await fetcher.get<AccountInfoApiTypes>({
+        path: `/account/${aid}`,
+        accessToken: get(accessTokenAtom),
+      });
+      return result;
+    },
 });
