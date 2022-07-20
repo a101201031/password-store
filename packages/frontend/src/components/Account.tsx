@@ -5,6 +5,7 @@ import SaveIcon from '@mui/icons-material/Save';
 import Visibility from '@mui/icons-material/Visibility';
 import VisibilityOff from '@mui/icons-material/VisibilityOff';
 import {
+  Autocomplete,
   Breadcrumbs,
   Button,
   Container,
@@ -28,7 +29,12 @@ import type { SubmitHandler } from 'react-hook-form';
 import { Controller, useForm } from 'react-hook-form';
 import { Link, useParams } from 'react-router-dom';
 import { useRecoilValue } from 'recoil';
-import { accountInfoSltr, groupInfoSltr, groupListSltr } from 'store';
+import {
+  accountInfoSltr,
+  accountOAuthListSltr,
+  groupInfoSltr,
+  groupListSltr,
+} from 'store';
 import { accountPasswordSchema } from 'validation/account';
 
 function Account() {
@@ -57,13 +63,24 @@ interface AccountInfoProps {
   aid: string;
 }
 
+interface AccountInfoFormTypes {
+  service_account: string;
+  password: string;
+  gid: string;
+  authentication: string;
+}
+
 function AccountInfo(props: AccountInfoProps) {
   const { aid } = props;
   const accountInfo = useRecoilValue(accountInfoSltr({ aid }));
   const groupList = useRecoilValue(groupListSltr);
   const groupInfo = useRecoilValue(groupInfoSltr({ gid: accountInfo.gid }));
+  const accountOAuthList = useRecoilValue(accountOAuthListSltr);
+  const defaultAccountOAuth = accountOAuthList.filter(
+    (v) => v.aid === accountInfo.authentication,
+  )[0];
 
-  const { control, handleSubmit } = useForm();
+  const { control, handleSubmit } = useForm<AccountInfoFormTypes>();
   const [show, setShow] = useState(false);
   const [safetyScore, setSafetyScore] = useState<number>(0);
 
@@ -86,7 +103,7 @@ function AccountInfo(props: AccountInfoProps) {
       setSafetyScore(100 - err.errors.length * 20);
     }
   };
-  // const safetyBarColor =
+
   const safetyBarColor: () =>
     | 'error'
     | 'warning'
@@ -179,7 +196,7 @@ function AccountInfo(props: AccountInfoProps) {
             Service Account
           </Typography>
           <Controller
-            name="accountId"
+            name="service_account"
             control={control}
             defaultValue={accountInfo.service_account}
             render={({ field }) => (
@@ -188,7 +205,7 @@ function AccountInfo(props: AccountInfoProps) {
                 required
                 disabled
                 fullWidth
-                id="accountId"
+                id="service_account"
                 autoComplete="accountId"
                 {...field}
               />
@@ -203,7 +220,7 @@ function AccountInfo(props: AccountInfoProps) {
             name="password"
             control={control}
             defaultValue=""
-            render={({ field: { onChange, onBlur, value, ref } }) => (
+            render={({ field: { onChange, ...field } }) => (
               <TextField
                 margin="normal"
                 fullWidth
@@ -226,9 +243,7 @@ function AccountInfo(props: AccountInfoProps) {
                   onChange(e);
                   handlePasswordChange(e);
                 }}
-                onBlur={onBlur}
-                value={value}
-                ref={ref}
+                {...field}
               />
             )}
           />
@@ -246,7 +261,7 @@ function AccountInfo(props: AccountInfoProps) {
           </Typography>
           <Controller
             control={control}
-            name="groupId"
+            name="gid"
             defaultValue={groupInfo.gid}
             render={({ field }) => (
               <Select {...field} fullWidth sx={{ mt: 2, mb: 1 }}>
@@ -256,6 +271,37 @@ function AccountInfo(props: AccountInfoProps) {
                   </MenuItem>
                 ))}
               </Select>
+            )}
+          />
+        </Grid>
+        <Grid item xs={12} sm={6}>
+          <Typography variant="body1" sx={{ fontWeight: 'bold' }}>
+            OAuth Service
+          </Typography>
+          <Controller
+            control={control}
+            name="authentication"
+            defaultValue={accountInfo.authentication}
+            render={({ field: { ref, onChange, ...field } }) => (
+              <Autocomplete
+                sx={{ mt: 2, mb: 1 }}
+                fullWidth
+                id="authentication"
+                defaultValue={defaultAccountOAuth}
+                options={accountOAuthList}
+                groupBy={(o) => o.group_name}
+                isOptionEqualToValue={(o, v) => o.aid === v.aid}
+                getOptionDisabled={(option) => option.aid === accountInfo.aid}
+                getOptionLabel={(o) =>
+                  o.aid === 'standalone'
+                    ? `standalone`
+                    : `${o.service_name} - ${o.service_account}`
+                }
+                onChange={(_, v) => onChange(v?.aid)}
+                renderInput={(params) => (
+                  <TextField {...params} {...field} inputRef={ref} />
+                )}
+              />
             )}
           />
         </Grid>
@@ -306,7 +352,12 @@ function AccountInfo(props: AccountInfoProps) {
                   </Button>
                 </Grid>
                 <Grid item>
-                  <Button variant="outlined" startIcon={<CancelIcon />}>
+                  <Button
+                    component={Link}
+                    to="/accounts"
+                    variant="outlined"
+                    startIcon={<CancelIcon />}
+                  >
                     Cancel
                   </Button>
                 </Grid>

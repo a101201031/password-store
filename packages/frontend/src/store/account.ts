@@ -88,3 +88,31 @@ export const accountInfoSltr = selectorFamily<
       return result;
     },
 });
+
+interface OAuthListTypes
+  extends Pick<AccountModel, 'aid' | 'service_name' | 'service_account'>,
+    Pick<AccountGroupModel, 'group_name'> {}
+
+export const accountOAuthListSltr = selector<OAuthListTypes[]>({
+  key: 'accountOAuthListSltr',
+  get: ({ get }) => {
+    const accountList = get(accountListSltr);
+    const oAuthList: OAuthListTypes[] = [
+      {
+        group_name: 'Unset',
+        aid: 'standalone',
+        service_name: 'Not used',
+        service_account: '',
+      },
+    ];
+    accountList.forEach((group) => {
+      group.accounts.forEach((account) => {
+        oAuthList.push({
+          ...account,
+          group_name: group.group_name,
+        });
+      });
+    });
+    return oAuthList;
+  },
+});
