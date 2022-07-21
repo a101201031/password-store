@@ -9,6 +9,7 @@ import {
   Breadcrumbs,
   Button,
   Container,
+  createFilterOptions,
   Divider,
   Grid,
   IconButton,
@@ -22,12 +23,14 @@ import {
   Typography,
 } from '@mui/material';
 import { AuthAsyncBoundary, CircularIndicator } from 'components';
+import { SERVICES } from 'constants/SERVICES';
 import { dateToString, nowDiffDays } from 'helper';
+import { AccountModel } from 'model';
 import type { ChangeEvent } from 'react';
 import { useState } from 'react';
 import type { SubmitHandler } from 'react-hook-form';
 import { Controller, useForm } from 'react-hook-form';
-import { Link, useParams } from 'react-router-dom';
+import { Link, Outlet, useParams } from 'react-router-dom';
 import { useRecoilValue } from 'recoil';
 import {
   accountInfoSltr,
@@ -35,11 +38,9 @@ import {
   groupInfoSltr,
   groupListSltr,
 } from 'store';
-import { accountPasswordSchema } from 'validation/account';
+import { accountPasswordSchema } from 'validation';
 
 function Account() {
-  const { aid } = useParams();
-
   return (
     <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
       <Grid container>
@@ -50,7 +51,7 @@ function Account() {
             }}
           >
             <AuthAsyncBoundary suspenseFallback={<CircularIndicator />}>
-              {aid ? <AccountInfo aid={aid} /> : <CircularIndicator />}
+              <Outlet />
             </AuthAsyncBoundary>
           </Paper>
         </Grid>
@@ -59,19 +60,14 @@ function Account() {
   );
 }
 
-interface AccountInfoProps {
-  aid: string;
-}
+interface AccountEditFormTypes
+  extends Pick<
+    AccountModel,
+    'service_account' | 'password' | 'gid' | 'authentication'
+  > {}
 
-interface AccountInfoFormTypes {
-  service_account: string;
-  password: string;
-  gid: string;
-  authentication: string;
-}
-
-function AccountInfo(props: AccountInfoProps) {
-  const { aid } = props;
+function AccountEdit() {
+  const { aid } = useParams() as { aid: string };
   const accountInfo = useRecoilValue(accountInfoSltr({ aid }));
   const groupList = useRecoilValue(groupListSltr);
   const groupInfo = useRecoilValue(groupInfoSltr({ gid: accountInfo.gid }));
@@ -80,11 +76,11 @@ function AccountInfo(props: AccountInfoProps) {
     (v) => v.aid === accountInfo.authentication,
   )[0];
 
-  const { control, handleSubmit } = useForm<AccountInfoFormTypes>();
+  const { control, handleSubmit } = useForm<AccountEditFormTypes>();
   const [show, setShow] = useState(false);
   const [safetyScore, setSafetyScore] = useState<number>(0);
 
-  const onSubmit: SubmitHandler<any> = (data) => {};
+  const onSubmit: SubmitHandler<AccountEditFormTypes> = (data) => {};
 
   const handleShowPasswordClick = () => {
     setShow(!show);
@@ -155,7 +151,7 @@ function AccountInfo(props: AccountInfoProps) {
                 to="/accounts"
                 underline="hover"
               >
-                Edit Account
+                Accounts
               </MuiLink>
               <Typography
                 variant="h5"
@@ -202,7 +198,6 @@ function AccountInfo(props: AccountInfoProps) {
             render={({ field }) => (
               <TextField
                 margin="normal"
-                required
                 disabled
                 fullWidth
                 id="service_account"
@@ -290,7 +285,6 @@ function AccountInfo(props: AccountInfoProps) {
                 defaultValue={defaultAccountOAuth}
                 options={accountOAuthList}
                 groupBy={(o) => o.group_name}
-                isOptionEqualToValue={(o, v) => o.aid === v.aid}
                 getOptionDisabled={(option) => option.aid === accountInfo.aid}
                 getOptionLabel={(o) =>
                   o.aid === 'standalone'
@@ -387,4 +381,311 @@ function AccountInfo(props: AccountInfoProps) {
   );
 }
 
-export { Account };
+interface AccountAddFormTypes
+  extends Pick<
+    AccountModel,
+    'service_name' | 'service_account' | 'password' | 'gid' | 'authentication'
+  > {}
+
+function AccountAdd() {
+  const groupList = useRecoilValue(groupListSltr);
+  const accountOAuthList = useRecoilValue(accountOAuthListSltr);
+
+  const { control, handleSubmit } = useForm<AccountAddFormTypes>();
+  const [show, setShow] = useState(false);
+  const [safetyScore, setSafetyScore] = useState<number>(0);
+
+  const onSubmit: SubmitHandler<AccountAddFormTypes> = (data) => {};
+
+  interface AutocompleteItemTypes extends Pick<AccountModel, 'service_name'> {
+    inputValue?: string;
+  }
+  const muiFilter = createFilterOptions<AutocompleteItemTypes>();
+
+  const handleShowPasswordClick = () => {
+    setShow(!show);
+  };
+
+  const handlePasswordChange = async (
+    e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
+  ) => {
+    try {
+      await accountPasswordSchema.validate(e.target.value, {
+        abortEarly: false,
+      });
+      setSafetyScore(100);
+    } catch (e) {
+      const err = e as { errors: string[] };
+      setSafetyScore(100 - err.errors.length * 20);
+    }
+  };
+
+  const safetyBarColor: () =>
+    | 'error'
+    | 'warning'
+    | 'success'
+    | undefined = () => {
+    switch (safetyScore / 20) {
+      case 0:
+      case 2:
+      case 1:
+        return 'error';
+      case 3:
+      case 4:
+        return 'warning';
+      case 5:
+        return 'success';
+      default:
+        return undefined;
+    }
+  };
+
+  return (
+    <>
+      <Grid container>
+        <Grid
+          item
+          xs={12}
+          sx={{
+            p: 2,
+            maxHeight: '64px',
+            backgroundColor: 'rgba( 255, 255, 255, 0.3 )',
+          }}
+        >
+          <Breadcrumbs separator={<NavigateNextIcon fontSize="small" />}>
+            <MuiLink
+              component={Link}
+              variant="h6"
+              sx={{ fontWeight: 'bold' }}
+              color="inherit"
+              to="/accounts"
+              underline="hover"
+            >
+              Accounts
+            </MuiLink>
+            <Typography
+              variant="h5"
+              color="primary"
+              sx={{ fontWeight: 'bold' }}
+            >
+              Add
+            </Typography>
+          </Breadcrumbs>
+        </Grid>
+      </Grid>
+      <Divider />
+      <Grid
+        rowSpacing={2}
+        columnSpacing={{ sm: 2 }}
+        component="form"
+        onSubmit={handleSubmit(onSubmit)}
+        container
+        sx={{ p: 2 }}
+      >
+        <Grid item xs={12} sm={6}>
+          <Typography variant="body1" sx={{ fontWeight: 'bold' }}>
+            Service Name
+          </Typography>
+          <Controller
+            name="service_name"
+            control={control}
+            defaultValue=""
+            render={({ field: { value, onChange, ...field } }) => (
+              <Autocomplete
+                value={value}
+                {...field}
+                sx={{ mt: 2, mb: 1 }}
+                fullWidth
+                options={SERVICES as AutocompleteItemTypes[]}
+                isOptionEqualToValue={(o, v) => {
+                  return typeof v === 'string' && o.service_name === v;
+                }}
+                selectOnFocus
+                clearOnBlur
+                getOptionLabel={(o) => {
+                  if (typeof o === 'string') {
+                    return o;
+                  } else if (o.inputValue) {
+                    return o.inputValue;
+                  }
+                  return o.service_name;
+                }}
+                onChange={(_, v) => {
+                  onChange(
+                    typeof v === 'string'
+                      ? v
+                      : v && (v.inputValue || v.service_name),
+                  );
+                }}
+                filterOptions={(options, params) => {
+                  const filtered = muiFilter(options, params);
+                  const { inputValue } = params;
+                  const isExisting = options.some(
+                    (o) => inputValue === o.service_name,
+                  );
+                  if (inputValue !== '' && !isExisting) {
+                    filtered.push({
+                      inputValue,
+                      service_name: `Add "${inputValue}"`,
+                    });
+                  }
+                  return filtered;
+                }}
+                renderOption={(props, o) => (
+                  <li {...props}>{o.service_name}</li>
+                )}
+                freeSolo
+                renderInput={(params) => <TextField {...params} />}
+              />
+            )}
+          />
+        </Grid>
+        <Grid item xs={12} sm={6}>
+          <Typography variant="body1" sx={{ fontWeight: 'bold' }}>
+            Service Account
+          </Typography>
+          <Controller
+            name="service_account"
+            control={control}
+            defaultValue=""
+            render={({ field }) => (
+              <TextField
+                margin="normal"
+                fullWidth
+                id="service_account"
+                autoComplete="username"
+                {...field}
+              />
+            )}
+          />
+        </Grid>
+        <Grid item xs={12} sm={6}>
+          <Typography variant="body1" sx={{ fontWeight: 'bold' }}>
+            Password
+          </Typography>
+          <Controller
+            name="password"
+            control={control}
+            defaultValue=""
+            render={({ field: { onChange, ...field } }) => (
+              <TextField
+                margin="normal"
+                fullWidth
+                type={show ? 'text' : 'password'}
+                id="password"
+                autoComplete="current-password"
+                InputProps={{
+                  endAdornment: (
+                    <InputAdornment position="start">
+                      <IconButton
+                        sx={{ padding: 0 }}
+                        onClick={handleShowPasswordClick}
+                      >
+                        {show ? <VisibilityOff /> : <Visibility />}
+                      </IconButton>
+                    </InputAdornment>
+                  ),
+                }}
+                onChange={(e) => {
+                  onChange(e);
+                  handlePasswordChange(e);
+                }}
+                {...field}
+              />
+            )}
+          />
+          {!!safetyScore && (
+            <LinearProgress
+              variant="determinate"
+              color={safetyBarColor()}
+              value={safetyScore}
+            />
+          )}
+        </Grid>
+        <Grid item xs={12} sm={6}>
+          <Typography variant="body1" sx={{ fontWeight: 'bold' }}>
+            Group Name
+          </Typography>
+          <Controller
+            control={control}
+            name="gid"
+            defaultValue=""
+            render={({ field }) => (
+              <Select {...field} fullWidth sx={{ mt: 2, mb: 1 }}>
+                {groupList.map((v) => (
+                  <MenuItem key={v.gid} value={v.gid}>
+                    {v.group_name}
+                  </MenuItem>
+                ))}
+              </Select>
+            )}
+          />
+        </Grid>
+        <Grid item xs={12} sm={6}>
+          <Typography variant="body1" sx={{ fontWeight: 'bold' }}>
+            OAuth Service
+          </Typography>
+          <Controller
+            control={control}
+            name="authentication"
+            defaultValue=""
+            render={({ field: { ref, onChange, ...field } }) => (
+              <Autocomplete
+                sx={{ mt: 2, mb: 1 }}
+                fullWidth
+                id="authentication"
+                options={accountOAuthList}
+                groupBy={(o) => o.group_name}
+                getOptionLabel={(o) =>
+                  o.aid === 'standalone'
+                    ? `standalone`
+                    : `${o.service_name} - ${o.service_account}`
+                }
+                onChange={(_, v) => onChange(v?.aid)}
+                renderInput={(params) => (
+                  <TextField {...params} {...field} inputRef={ref} />
+                )}
+              />
+            )}
+          />
+        </Grid>
+        <Grid item xs={12}>
+          <Grid container justifyContent="space-between">
+            <Grid item xs={6}>
+              <Grid container columnSpacing={{ xs: 1, sm: 2 }}>
+                <Grid item>
+                  <Button
+                    variant="contained"
+                    type="submit"
+                    startIcon={<SaveIcon />}
+                  >
+                    Save
+                  </Button>
+                </Grid>
+                <Grid item>
+                  <Button
+                    component={Link}
+                    to="/accounts"
+                    variant="outlined"
+                    startIcon={<CancelIcon />}
+                  >
+                    Cancel
+                  </Button>
+                </Grid>
+              </Grid>
+            </Grid>
+            <Grid item xs={6}>
+              <Grid
+                container
+                justifyContent="end"
+                columnSpacing={{ xs: 1, sm: 2 }}
+              ></Grid>
+            </Grid>
+          </Grid>
+        </Grid>
+      </Grid>
+    </>
+  );
+}
+
+export { Account, AccountEdit, AccountAdd };

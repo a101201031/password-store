@@ -105,7 +105,7 @@ function AccountEditBoard() {
                   <Grid item>
                     <Button
                       component={Link}
-                      to="add"
+                      to="/account/add"
                       variant="outlined"
                       startIcon={<AddIcon />}
                     >

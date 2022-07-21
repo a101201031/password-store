@@ -1,6 +1,8 @@
 import {
   Account,
+  AccountAdd,
   AccountBoard,
+  AccountEdit,
   AccountEditBoard,
   CircularIndicator,
   Main,
@@ -23,7 +25,10 @@ export const App = () => (
       <Route element={<Main />}>
         <Route index element={<AccountBoard />} />
         <Route path="/accounts" element={<AccountEditBoard />} />
-        <Route path="/account/:aid" element={<Account />} />
+        <Route path="/account" element={<Account />}>
+          <Route path="add" element={<AccountAdd />} />
+          <Route path=":aid" element={<AccountEdit />} />
+        </Route>
       </Route>
     </Route>
     <Route path="/signin" element={<SignIn />} />
