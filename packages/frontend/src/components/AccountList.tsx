@@ -20,7 +20,9 @@ function AccountList(props: AccountListProps) {
           key={v.gid}
         >
           <Grid item xs={12} marginY={2}>
-            <Typography variant="h5">{v.group_name}</Typography>
+            <Typography variant="h5">
+              {v.group_name} ({v.accounts.length})
+            </Typography>
           </Grid>
           {v.accounts.map((sv) => (
             <Grid item xs={4} key={sv.aid}>
