@@ -14,11 +14,11 @@ const createFunction: ValidatedEventAPIGatewayProxyEvent<
   const idToken = event.headers.Authorization.split(' ')[1];
   const { uid } = await firebaseAdmin.auth().verifyIdToken(idToken);
   const gid = cuid();
-  const { groupName } = event.body;
+  const { group_name } = event.body;
 
   let result = await query({
     sql: 'SELECT group_name FROM account_group WHERE uid = ? AND group_name = ?',
-    values: [uid, groupName],
+    values: [uid, group_name],
   });
   if (result[0]) {
     throw new BadRequest('Group already in use');
@@ -27,7 +27,7 @@ const createFunction: ValidatedEventAPIGatewayProxyEvent<
   await transaction()
     .query({
       sql: 'INSERT INTO account_group(uid, gid, group_name) VALUES(?, ?, ?)',
-      values: [uid, gid, groupName],
+      values: [uid, gid, group_name],
     })
     .commit();
   return formatJSONResponse({ message: 'success' });
