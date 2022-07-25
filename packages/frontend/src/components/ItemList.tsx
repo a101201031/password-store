@@ -1,9 +1,9 @@
 import AssignmentIcon from '@mui/icons-material/Assignment';
 import BarChartIcon from '@mui/icons-material/BarChart';
+import GroupIcon from '@mui/icons-material/Group';
 import LayersIcon from '@mui/icons-material/Layers';
 import ListIcon from '@mui/icons-material/List';
 import LockOpenIcon from '@mui/icons-material/LockOpen';
-import PeopleIcon from '@mui/icons-material/People';
 import {
   ListItemButton,
   ListItemIcon,
@@ -51,12 +51,9 @@ function MainListItems() {
       <CustomLink to="/accounts" primary="Account List">
         <ListIcon />
       </CustomLink>
-      <ListItemButton>
-        <ListItemIcon>
-          <PeopleIcon />
-        </ListItemIcon>
-        <ListItemText primary="Customers" />
-      </ListItemButton>
+      <CustomLink to="/groups" primary="Group List">
+        <GroupIcon />
+      </CustomLink>
       <ListItemButton>
         <ListItemIcon>
           <BarChartIcon />

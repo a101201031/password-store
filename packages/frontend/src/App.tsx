@@ -5,6 +5,7 @@ import {
   AccountEdit,
   AccountEditBoard,
   CircularIndicator,
+  GroupBoard,
   Main,
 } from 'components';
 import { SignIn, SignUp } from 'components/sign';
@@ -29,6 +30,7 @@ export const App = () => (
           <Route path="add" element={<AccountAdd />} />
           <Route path=":aid" element={<AccountEdit />} />
         </Route>
+        <Route path="/groups" element={<GroupBoard />} />
       </Route>
     </Route>
     <Route path="/signin" element={<SignIn />} />
