@@ -1,4 +1,4 @@
-import { groupSchema } from '@apiSchema';
+import { groupCreateSchema, groupSchema } from '@apiSchema';
 import type { ValidatedEventAPIGatewayProxyEvent } from '@libs/api-gateway';
 import { formatJSONResponse } from '@libs/api-gateway';
 import { authMiddyfy } from '@libs/lambda';
@@ -9,7 +9,7 @@ import cuid from 'cuid';
 import { BadRequest } from 'http-errors';
 
 const createFunction: ValidatedEventAPIGatewayProxyEvent<
-  typeof groupSchema.properties.body
+  typeof groupCreateSchema.properties.body
 > = async (event) => {
   const idToken = event.headers.Authorization.split(' ')[1];
   const { uid } = await firebaseAdmin.auth().verifyIdToken(idToken);
@@ -39,7 +39,7 @@ const readFunction = async (
   const idToken = event.headers.Authorization.split(' ')[1];
   const { uid } = await firebaseAdmin.auth().verifyIdToken(idToken);
   let groups = await query({
-    sql: 'SELECT gid, group_name FROM account_group WHERE uid = ?',
+    sql: `SELECT AG.gid, AG.group_name, AG.created_at, COUNT(A.aid) accounts FROM account_group AG LEFT OUTER JOIN account A ON AG.gid = A.gid WHERE AG.uid = ? GROUP BY AG.gid, AG.group_name, AG.created_at`,
     values: [uid],
   });
   return formatJSONResponse({ groups, message: 'success' });
@@ -50,18 +50,19 @@ const deleteFunction: ValidatedEventAPIGatewayProxyEvent<
 > = async (event) => {
   const idToken = event.headers.Authorization.split(' ')[1];
   const { uid } = await firebaseAdmin.auth().verifyIdToken(idToken);
-  const { groupName } = event.body;
+  const { gid } = event.body;
   let result = await query({
-    sql: 'SELECT group_name FROM account_group WHERE uid = ? AND group_name = ?',
-    values: [uid, groupName],
+    sql: 'SELECT group_name FROM account_group WHERE uid = ? AND gid = ?',
+    values: [uid, gid],
   });
   if (!result[0]) {
+    console.log(result);
     throw new BadRequest('Not found group');
   }
   await transaction()
     .query({
-      sql: 'DELETE FROM account_group WHERE uid = ? AND group_name = ?',
-      values: [uid, groupName],
+      sql: 'DELETE FROM account_group WHERE uid = ? AND gid = ?',
+      values: [uid, gid],
     })
     .commit();
   return formatJSONResponse({ message: 'success' });
@@ -78,5 +79,5 @@ export const readGroup = authMiddyfy({
 
 export const createGroup = authMiddyfy({
   handler: createFunction,
-  inputSchema: groupSchema,
+  inputSchema: groupCreateSchema,
 });

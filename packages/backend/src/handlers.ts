@@ -5,6 +5,7 @@ import {
   groupSchema,
   accountCreateSchema,
   accountUpdateSchema,
+  groupCreateSchema,
 } from '@apiSchema';
 
 export default {
@@ -49,7 +50,7 @@ export default {
           path: 'group',
           request: {
             schemas: {
-              'application/json': groupSchema,
+              'application/json': groupCreateSchema,
             },
           },
         },

@@ -4,9 +4,22 @@ export const groupSchema = {
     body: {
       type: 'object',
       properties: {
-        groupName: { type: 'string' },
+        gid: { type: 'string' },
       },
-      required: ['groupName'],
+      required: ['gid'],
+    },
+  },
+} as const;
+
+export const groupCreateSchema = {
+  type: 'object',
+  properties: {
+    body: {
+      type: 'object',
+      properties: {
+        group_name: { type: 'string' },
+      },
+      required: ['group_name'],
     },
   },
 } as const;
