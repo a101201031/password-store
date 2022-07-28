@@ -1,6 +1,6 @@
 import { dateToString, fetcher } from 'helper';
 import { AccountGroupModel } from 'model';
-import { selector, selectorFamily } from 'recoil';
+import { atom, selector, selectorFamily } from 'recoil';
 import { SelectorMapper } from 'store';
 import { accessTokenAtom } from './token';
 
@@ -25,8 +25,7 @@ export const groupListSltr = selector<GroupListTypes[]>({
   },
 });
 
-export interface GroupTableRowTypes
-  extends Omit<GroupListTypes, 'gid' | 'created_at'> {
+export interface GroupTableRowTypes extends Omit<GroupListTypes, 'created_at'> {
   created_at: string;
 }
 
@@ -37,6 +36,7 @@ export const groupTableRowSltr = selector<GroupTableRowTypes[]>({
       group_name: v.group_name,
       accounts: v.accounts,
       created_at: dateToString(v.created_at),
+      gid: v.gid,
     }));
   },
 });
@@ -56,4 +56,13 @@ export const groupInfoSltr = selectorFamily<
       const groupList = get(groupListSltr);
       return groupList.filter((v) => v.gid === gid)[0];
     },
+});
+
+interface GroupSubTableOpenTypes {
+  [key: string]: boolean;
+}
+
+export const groupSubTableOpenAtom = atom<GroupSubTableOpenTypes>({
+  key: 'groupSubTableOpenAtom',
+  default: {},
 });

@@ -6,7 +6,10 @@ import { SelectorMapper } from 'store';
 
 interface AccountListTypes
   extends Pick<AccountGroupModel, 'gid' | 'group_name'> {
-  accounts: Pick<AccountModel, 'aid' | 'service_name' | 'service_account'>[];
+  accounts: Pick<
+    AccountModel,
+    'aid' | 'service_name' | 'service_account' | 'authentication'
+  >[];
 }
 
 interface AccountListApiTypes {
@@ -115,4 +118,30 @@ export const accountOAuthListSltr = selector<OAuthListTypes[]>({
     });
     return oAuthList;
   },
+});
+
+export interface AccountListByGroupTypes
+  extends Pick<
+    AccountModel,
+    'service_name' | 'service_account' | 'authentication'
+  > {}
+
+interface AccountListByGroupParam extends Pick<AccountGroupModel, 'gid'> {}
+
+export const accountListByGroupSltr = selectorFamily<
+  AccountListByGroupTypes[],
+  SelectorMapper<AccountListByGroupParam>
+>({
+  key: 'accountListByGroupSltr',
+  get:
+    ({ gid }) =>
+    ({ get }) => {
+      return get(accountListSltr)
+        .filter((v) => v.gid === gid)[0]
+        .accounts.map((v) => ({
+          service_name: v.service_name,
+          service_account: v.service_account,
+          authentication: v.authentication,
+        }));
+    },
 });

@@ -1,7 +1,13 @@
+import EditIcon from '@mui/icons-material/Edit';
+import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
+import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
 import {
+  Box,
+  Collapse,
   Container,
   Divider,
   Grid,
+  IconButton,
   Paper,
   Table,
   TableBody,
@@ -16,11 +22,20 @@ import {
   getCoreRowModel,
   useReactTable,
 } from '@tanstack/react-table';
-import { AuthAsyncBoundary, CardIndicator } from 'components';
-import { useMemo } from 'react';
-import { useRecoilValue } from 'recoil';
-import type { GroupTableRowTypes } from 'store';
-import { groupTableRowSltr } from 'store';
+import {
+  AuthAsyncBoundary,
+  CardIndicator,
+  CircularIndicator,
+} from 'components';
+import type { AccountGroupModel } from 'model';
+import { Fragment, useMemo } from 'react';
+import { useRecoilState, useRecoilValue } from 'recoil';
+import type { AccountListByGroupTypes, GroupTableRowTypes } from 'store';
+import {
+  accountListByGroupSltr,
+  groupSubTableOpenAtom,
+  groupTableRowSltr,
+} from 'store';
 
 function GroupBoard() {
   return (
@@ -49,9 +64,6 @@ function GroupBoard() {
             </Grid>
             <Divider />
             <AuthAsyncBoundary
-              errorFallback={(_) => {
-                return null;
-              }}
               suspenseFallback={
                 <Grid
                   container
@@ -93,11 +105,22 @@ function GroupTable() {
         cell: (v) => v.getValue(),
         footer: (props) => props.column.id,
       },
+      {
+        header: 'Modify',
+        accessorKey: 'gid',
+        cell: () => (
+          <IconButton aria-label="delete" size="large">
+            <EditIcon fontSize="inherit" />
+          </IconButton>
+        ),
+      },
     ],
     [],
   );
 
   const groupList = useRecoilValue(groupTableRowSltr);
+  const [open, setOpen] = useRecoilState(groupSubTableOpenAtom);
+
   const table = useReactTable({
     columns,
     data: groupList,
@@ -107,12 +130,14 @@ function GroupTable() {
     <Table>
       <TableHead>
         {table.getHeaderGroups().map((headerGroup) => (
-          // <TableRow {...headerGroup.getHeaderGroupProps()}>
           <TableRow key={headerGroup.id}>
+            <TableCell />
             {headerGroup.headers.map((header) => (
-              // <TableCell {...column.getHeaderProps()}>
               <TableCell key={header.id}>
-                {header.column.columnDef.header}
+                {flexRender(
+                  header.column.columnDef.header,
+                  header.getContext(),
+                )}
               </TableCell>
             ))}
           </TableRow>
@@ -120,16 +145,133 @@ function GroupTable() {
       </TableHead>
       <TableBody>
         {table.getRowModel().rows.map((row) => (
-          <TableRow key={row.id}>
-            {row.getVisibleCells().map((cell) => (
-              <TableCell key={cell.id}>
-                {flexRender(cell.column.columnDef.cell, cell.getContext())}
+          <Fragment key={row.id}>
+            <TableRow>
+              <TableCell>
+                {row.getValue<number>('accounts') ? (
+                  <IconButton
+                    aria-label="expand row"
+                    size="small"
+                    onClick={() => {
+                      setOpen({
+                        ...open,
+                        [row.getValue<string>('gid')]:
+                          !open[row.getValue<string>('gid')],
+                      });
+                    }}
+                  >
+                    {open[row.getValue<string>('gid')] ? (
+                      <KeyboardArrowUpIcon />
+                    ) : (
+                      <KeyboardArrowDownIcon />
+                    )}
+                  </IconButton>
+                ) : (
+                  false
+                )}
               </TableCell>
-            ))}
-          </TableRow>
+              {row.getVisibleCells().map((cell) => (
+                <TableCell key={cell.id}>
+                  {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                </TableCell>
+              ))}
+            </TableRow>
+            <TableRow>
+              {open[row.getValue<string>('gid')] && (
+                <AuthAsyncBoundary
+                  suspenseFallback={
+                    <TableCell colSpan={6}>
+                      <Grid container justifyContent="center">
+                        <CircularIndicator />
+                      </Grid>
+                    </TableCell>
+                  }
+                >
+                  <SubMemberTable gid={row.getValue<string>('gid')} />
+                </AuthAsyncBoundary>
+              )}
+            </TableRow>
+          </Fragment>
         ))}
       </TableBody>
     </Table>
+  );
+}
+
+interface SubMemberTableProps extends Pick<AccountGroupModel, 'gid'> {}
+
+function SubMemberTable({ gid }: SubMemberTableProps) {
+  const accountListByGroup = useRecoilValue(accountListByGroupSltr({ gid }));
+  const open = useRecoilValue(groupSubTableOpenAtom);
+  const columns = useMemo<ColumnDef<AccountListByGroupTypes>[]>(
+    () => [
+      {
+        header: 'Service name',
+        accessorKey: 'service_name',
+        cell: (v) => v.getValue(),
+        footer: (props) => props.column.id,
+      },
+      {
+        header: 'Account',
+        accessorKey: 'service_account',
+        cell: (v) => v.getValue(),
+        footer: (props) => props.column.id,
+      },
+      {
+        header: 'OAuth',
+        accessorKey: 'authentication',
+        cell: (v) => v.getValue(),
+        footer: (props) => props.column.id,
+      },
+    ],
+    [],
+  );
+
+  const table = useReactTable({
+    columns,
+    data: accountListByGroup,
+    getCoreRowModel: getCoreRowModel(),
+  });
+  return (
+    <TableCell style={{ paddingBottom: 0, paddingTop: 0 }} colSpan={6}>
+      <Collapse in={open[gid]} timeout="auto" unmountOnExit>
+        <Box sx={{ margin: 1 }}>
+          <Typography variant="h6" gutterBottom component="div">
+            Members
+          </Typography>
+          <Table size="small">
+            <TableHead>
+              {table.getHeaderGroups().map((headerGroup) => (
+                <TableRow key={headerGroup.id}>
+                  {headerGroup.headers.map((header) => (
+                    <TableCell key={header.id}>
+                      {flexRender(
+                        header.column.columnDef.header,
+                        header.getContext(),
+                      )}
+                    </TableCell>
+                  ))}
+                </TableRow>
+              ))}
+            </TableHead>
+            <TableBody>
+              {table.getRowModel().rows.map((row) => (
+                <TableRow key={row.id}>
+                  {row.getVisibleCells().map((cell) => (
+                    <TableCell key={cell.id}>
+                      {flexRender(
+                        cell.column.columnDef.cell,
+                        cell.getContext(),
+                      )}
+                    </TableCell>
+                  ))}
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </Box>
+      </Collapse>
+    </TableCell>
   );
 }
 
