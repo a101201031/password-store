@@ -2,17 +2,8 @@ import { Box, CircularProgress, Grid, Skeleton } from '@mui/material';
 
 function CircularIndicator() {
   return (
-    <Box
-      sx={{
-        display: 'flex',
-        justifyContent: 'center',
-        alignContent: 'center',
-        minHeight: '100vh',
-      }}
-    >
-      <Box my="auto">
-        <CircularProgress />
-      </Box>
+    <Box my="auto">
+      <CircularProgress />
     </Box>
   );
 }

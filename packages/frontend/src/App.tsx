@@ -4,25 +4,16 @@ import {
   AccountBoard,
   AccountEdit,
   AccountEditBoard,
-  CircularIndicator,
   GroupBoard,
   Main,
 } from 'components';
 import { SignIn, SignUp } from 'components/sign';
-import { Suspense } from 'react';
 import { Route, Routes } from 'react-router-dom';
 import { ProtectedRoute } from 'router';
 
 export const App = () => (
   <Routes>
-    <Route
-      path="/"
-      element={
-        <Suspense fallback={<CircularIndicator />}>
-          <ProtectedRoute />
-        </Suspense>
-      }
-    >
+    <Route path="/" element={<ProtectedRoute />}>
       <Route element={<Main />}>
         <Route index element={<AccountBoard />} />
         <Route path="/accounts" element={<AccountEditBoard />} />
