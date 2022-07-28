@@ -11,11 +11,7 @@ const readFunction = async (
   type QueryReturnTypes = Pick<AccountGroupModel, 'gid' | 'group_name'> &
     Omit<
       AccountModel,
-      | 'password'
-      | 'password_last_change'
-      | 'created_at'
-      | 'updated_at'
-      | 'authentication'
+      'password' | 'password_last_change' | 'created_at' | 'updated_at'
     >;
 
   const { uid } = await firebaseAdmin
@@ -23,7 +19,7 @@ const readFunction = async (
     .verifyIdToken(event.headers.Authorization.split(' ')[1]);
 
   let result: QueryReturnTypes[] = await query({
-    sql: 'SELECT AG.gid, AG.group_name, A.aid, A.service_name, A.service_account FROM account_group AG INNER JOIN account A ON AG.gid = A.gid AND AG.uid = ? ORDER BY AG.gid',
+    sql: 'SELECT AG.gid, AG.group_name, A.aid, A.service_name, A.service_account, A.authentication FROM account_group AG INNER JOIN account A ON AG.gid = A.gid AND AG.uid = ? ORDER BY AG.gid',
     values: [uid],
   });
 
@@ -31,24 +27,20 @@ const readFunction = async (
 
   result.forEach((val) => {
     const groupIdx = groupInAccount.findIndex((v) => v.gid === val.gid);
+    const account = {
+      aid: val.aid,
+      service_name: val.service_name,
+      service_account: val.service_account,
+      authentication: val.authentication,
+    };
     if (groupIdx === -1) {
       groupInAccount.push({
         gid: val.gid,
         group_name: val.group_name,
-        accounts: [
-          {
-            aid: val.aid,
-            service_name: val.service_name,
-            service_account: val.service_account,
-          },
-        ],
+        accounts: [account],
       });
     } else {
-      groupInAccount[groupIdx].accounts.push({
-        aid: val.aid,
-        service_name: val.service_name,
-        service_account: val.service_account,
-      });
+      groupInAccount[groupIdx].accounts.push(account);
     }
   });
 
