@@ -3,7 +3,7 @@ import { fetcher } from 'helper';
 import { AccountModel, AccountGroupModel } from 'model';
 import { accessTokenAtom } from './token';
 import { SelectorMapper } from 'store';
-
+import { concat } from 'lodash';
 interface AccountListTypes
   extends Pick<AccountGroupModel, 'gid' | 'group_name'> {
   accounts: Pick<
@@ -110,10 +110,12 @@ export const accountOAuthListSltr = selector<OAuthListTypes[]>({
     ];
     accountList.forEach((group) => {
       group.accounts.forEach((account) => {
-        oAuthList.push({
-          ...account,
-          group_name: group.group_name,
-        });
+        if (account.authentication === 'standalone') {
+          oAuthList.push({
+            ...account,
+            group_name: group.group_name,
+          });
+        }
       });
     });
     return oAuthList;
@@ -136,6 +138,7 @@ export const accountListByGroupSltr = selectorFamily<
   get:
     ({ gid }) =>
     ({ get }) => {
+      console.log(get(oAuthBaseListSltr));
       return get(accountListSltr)
         .filter((v) => v.gid === gid)[0]
         .accounts.map((v) => ({
@@ -144,4 +147,24 @@ export const accountListByGroupSltr = selectorFamily<
           authentication: v.authentication,
         }));
     },
+});
+
+interface OAuthBaseListTypes
+  extends Pick<AccountModel, 'aid' | 'service_name' | 'service_account'> {}
+
+export const oAuthBaseListSltr = selector<OAuthBaseListTypes[]>({
+  key: 'oAuthBaseListSltr',
+  get: ({ get }) => {
+    return concat(
+      ...get(accountListSltr).map((group) =>
+        group.accounts
+          .filter((account) => account.authentication === 'standalone')
+          .map((account) => ({
+            aid: account.aid,
+            service_name: account.service_name,
+            service_account: account.service_account,
+          })),
+      ),
+    );
+  },
 });
