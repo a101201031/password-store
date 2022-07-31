@@ -138,14 +138,20 @@ export const accountListByGroupSltr = selectorFamily<
   get:
     ({ gid }) =>
     ({ get }) => {
-      console.log(get(oAuthBaseListSltr));
       return get(accountListSltr)
         .filter((v) => v.gid === gid)[0]
-        .accounts.map((v) => ({
-          service_name: v.service_name,
-          service_account: v.service_account,
-          authentication: v.authentication,
-        }));
+        .accounts.map((v) => {
+          const oAuthBase = get(oAuthBaseListSltr).find(
+            (oAuthV) => oAuthV.aid === v.authentication,
+          );
+          return {
+            service_name: v.service_name,
+            service_account: v.service_account,
+            authentication: oAuthBase
+              ? `${oAuthBase.service_name} - ${oAuthBase.service_account}`
+              : v.authentication,
+          };
+        });
     },
 });
 

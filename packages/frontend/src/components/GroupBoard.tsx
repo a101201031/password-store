@@ -244,7 +244,15 @@ function SubMemberTable({ gid }: SubMemberTableProps) {
               {table.getHeaderGroups().map((headerGroup) => (
                 <TableRow key={headerGroup.id}>
                   {headerGroup.headers.map((header) => (
-                    <TableCell key={header.id}>
+                    <TableCell
+                      key={header.id}
+                      sx={{
+                        width:
+                          header.column.columnDef.header === 'OAuth'
+                            ? '40%'
+                            : '30%',
+                      }}
+                    >
                       {flexRender(
                         header.column.columnDef.header,
                         header.getContext(),
