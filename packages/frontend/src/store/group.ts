@@ -1,3 +1,4 @@
+import { Column } from '@tanstack/react-table';
 import { dateToString, fetcher } from 'helper';
 import { AccountGroupModel } from 'model';
 import { atom, selector, selectorFamily } from 'recoil';
@@ -65,4 +66,9 @@ interface GroupSubTableOpenTypes {
 export const groupSubTableOpenAtom = atom<GroupSubTableOpenTypes>({
   key: 'groupSubTableOpenAtom',
   default: {},
+});
+
+export const groupFilterColumnAtom = atom<Column<any, any> | undefined>({
+  key: 'groupColumnFilterAtom',
+  default: undefined,
 });

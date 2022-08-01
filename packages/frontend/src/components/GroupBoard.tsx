@@ -1,6 +1,8 @@
+import CancelIcon from '@mui/icons-material/Cancel';
 import EditIcon from '@mui/icons-material/Edit';
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
+import SearchIcon from '@mui/icons-material/Search';
 import {
   Box,
   Collapse,
@@ -8,18 +10,21 @@ import {
   Divider,
   Grid,
   IconButton,
+  InputAdornment,
   Paper,
-  Table,
+  Table as MuiTable,
   TableBody,
   TableCell,
   TableHead,
   TableRow,
+  TextField,
   Typography,
 } from '@mui/material';
+import type { ColumnDef } from '@tanstack/react-table';
 import {
-  ColumnDef,
   flexRender,
   getCoreRowModel,
+  getFilteredRowModel,
   useReactTable,
 } from '@tanstack/react-table';
 import {
@@ -28,11 +33,20 @@ import {
   CircularIndicator,
 } from 'components';
 import type { AccountGroupModel } from 'model';
-import { Fragment, useMemo } from 'react';
+import {
+  ChangeEventHandler,
+  Fragment,
+  MouseEventHandler,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import { useRecoilState, useRecoilValue } from 'recoil';
 import type { AccountListByGroupTypes, GroupTableRowTypes } from 'store';
 import {
   accountListByGroupSltr,
+  groupFilterColumnAtom,
   groupSubTableOpenAtom,
   groupTableRowSltr,
 } from 'store';
@@ -50,17 +64,28 @@ function GroupBoard() {
           >
             <Grid
               container
-              sx={{ mb: 2, minHeight: '36px' }}
+              sx={{ mb: 2, minHeight: '36px', maxHeight: '36px' }}
               wrap="nowrap"
               justifyContent="space-between"
             >
-              <Typography
-                variant="h5"
-                color="primary"
-                sx={{ fontWeight: 'bold' }}
+              <Grid item xs={6}>
+                <Typography
+                  variant="h5"
+                  color="primary"
+                  sx={{ fontWeight: 'bold' }}
+                >
+                  Groups
+                </Typography>
+              </Grid>
+              <Grid
+                container
+                columnSpacing={{ xs: 1, sm: 2, md: 3 }}
+                justifyContent="end"
               >
-                Groups
-              </Typography>
+                <Grid item>
+                  <GroupSearchField />
+                </Grid>
+              </Grid>
             </Grid>
             <Divider />
             <AuthAsyncBoundary
@@ -98,12 +123,14 @@ function GroupTable() {
         accessorKey: 'accounts',
         cell: (v) => v.getValue(),
         footer: (props) => props.column.id,
+        enableColumnFilter: false,
       },
       {
         header: 'Created at',
         accessorKey: 'created_at',
         cell: (v) => v.getValue(),
         footer: (props) => props.column.id,
+        enableColumnFilter: false,
       },
       {
         header: 'Modify',
@@ -113,6 +140,7 @@ function GroupTable() {
             <EditIcon fontSize="inherit" />
           </IconButton>
         ),
+        enableColumnFilter: false,
       },
     ],
     [],
@@ -120,14 +148,28 @@ function GroupTable() {
 
   const groupList = useRecoilValue(groupTableRowSltr);
   const [open, setOpen] = useRecoilState(groupSubTableOpenAtom);
+  const [, setFilterColumn] = useRecoilState(groupFilterColumnAtom);
 
   const table = useReactTable({
     columns,
     data: groupList,
     getCoreRowModel: getCoreRowModel(),
+    getFilteredRowModel: getFilteredRowModel(),
   });
+
+  useEffect(() => {
+    table
+      .getHeaderGroups()
+      .forEach((headerGroup) =>
+        headerGroup.headers.forEach(
+          (header) =>
+            header.column.getCanFilter() && setFilterColumn(header.column),
+        ),
+      );
+  });
+
   return (
-    <Table>
+    <MuiTable>
       <TableHead>
         {table.getHeaderGroups().map((headerGroup) => (
           <TableRow key={headerGroup.id}>
@@ -194,7 +236,7 @@ function GroupTable() {
           </Fragment>
         ))}
       </TableBody>
-    </Table>
+    </MuiTable>
   );
 }
 
@@ -239,7 +281,7 @@ function SubMemberTable({ gid }: SubMemberTableProps) {
           <Typography variant="h6" gutterBottom component="div">
             Members
           </Typography>
-          <Table size="small">
+          <MuiTable size="small">
             <TableHead>
               {table.getHeaderGroups().map((headerGroup) => (
                 <TableRow key={headerGroup.id}>
@@ -276,10 +318,58 @@ function SubMemberTable({ gid }: SubMemberTableProps) {
                 </TableRow>
               ))}
             </TableBody>
-          </Table>
+          </MuiTable>
         </Box>
       </Collapse>
     </TableCell>
+  );
+}
+
+function GroupSearchField() {
+  const inputRef = useRef<HTMLInputElement>(null);
+  const [filterValue, setFilterValue] = useState('');
+  const filterColumn = useRecoilValue(groupFilterColumnAtom);
+
+  const handleChange: ChangeEventHandler<
+    HTMLTextAreaElement | HTMLInputElement
+  > = (e) => {
+    const { value } = e.target;
+    setFilterValue(value);
+    filterColumn?.setFilterValue(value);
+  };
+
+  const handleClearIconClick: MouseEventHandler<HTMLButtonElement> = () => {
+    setFilterValue('');
+    filterColumn?.setFilterValue('');
+  };
+
+  const handleSearchIconClick: MouseEventHandler<HTMLButtonElement> = () => {
+    inputRef.current?.focus();
+  };
+
+  return (
+    <TextField
+      inputRef={inputRef}
+      id="accountId"
+      InputProps={{
+        startAdornment: (
+          <InputAdornment position="start">
+            {filterValue ? (
+              <IconButton sx={{ padding: 0 }} onClick={handleClearIconClick}>
+                <CancelIcon />
+              </IconButton>
+            ) : (
+              <IconButton sx={{ padding: 0 }} onClick={handleSearchIconClick}>
+                <SearchIcon />
+              </IconButton>
+            )}
+          </InputAdornment>
+        ),
+      }}
+      variant="standard"
+      onChange={handleChange}
+      value={filterValue}
+    />
   );
 }
 
