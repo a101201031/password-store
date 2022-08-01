@@ -43,7 +43,7 @@ function AccountBoard() {
               >
                 Show Password
               </Typography>
-              <SearchFiled />
+              <SearchField />
             </Grid>
             <Divider />
             <AuthAsyncBoundary
@@ -113,7 +113,7 @@ function AccountEditBoard() {
                     </Button>
                   </Grid>
                   <Grid item>
-                    <SearchFiled />
+                    <SearchField />
                   </Grid>
                 </Grid>
               </Grid>
@@ -140,7 +140,7 @@ function AccountEditBoard() {
   );
 }
 
-function SearchFiled() {
+function SearchField() {
   const inputRef = useRef<HTMLInputElement>(null);
   const [filterValue, setFilterValue] = useRecoilState(accountListFilterAtom);
   const handleChange: ChangeEventHandler<
