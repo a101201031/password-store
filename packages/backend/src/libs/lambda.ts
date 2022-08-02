@@ -15,9 +15,8 @@ export const middyfy = ({ handler, inputSchema }: MiddfyParams) => {
       .use(middyJsonBodyParser())
       .use(middyValidator({ inputSchema }))
       .use(middyErrorHandler());
-  } else {
-    return middy(handler).use(middyJsonBodyParser()).use(middyErrorHandler());
   }
+  return middy(handler).use(middyJsonBodyParser()).use(middyErrorHandler());
 };
 
 export const authMiddyfy = ({ handler, inputSchema }: MiddfyParams) => {
@@ -27,10 +26,9 @@ export const authMiddyfy = ({ handler, inputSchema }: MiddfyParams) => {
       .use(middyJsonBodyParser())
       .use(middyValidator({ inputSchema }))
       .use(middyErrorHandler());
-  } else {
-    return middy(handler)
-      .use(authorizer())
-      .use(middyJsonBodyParser())
-      .use(middyErrorHandler());
   }
+  return middy(handler)
+    .use(authorizer())
+    .use(middyJsonBodyParser())
+    .use(middyErrorHandler());
 };

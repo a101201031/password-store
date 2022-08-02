@@ -9,5 +9,5 @@ export const mysqlConn = mysql({
   },
 });
 
-export const query = mysqlConn.query;
-export const transaction = mysqlConn.transaction;
+export const { query } = mysqlConn;
+export const { transaction } = mysqlConn;

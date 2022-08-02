@@ -18,7 +18,7 @@ const readFunction = async (
     .auth()
     .verifyIdToken(event.headers.Authorization.split(' ')[1]);
 
-  let result: QueryReturnTypes[] = await query({
+  const result: QueryReturnTypes[] = await query({
     sql: 'SELECT AG.gid, AG.group_name, A.aid, A.service_name, A.service_account, A.authentication FROM account_group AG INNER JOIN account A ON AG.gid = A.gid AND AG.uid = ? ORDER BY AG.gid',
     values: [uid],
   });
