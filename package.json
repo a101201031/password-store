@@ -20,7 +20,8 @@
     "typescript": "^4.7.4"
   },
   "scripts": {
-    "postinstall": "husky install"
+    "postinstall": "husky install",
+    "pre-commit": "lint-staged"
   },
   "version": "1.0.0",
   "main": "index.js",
