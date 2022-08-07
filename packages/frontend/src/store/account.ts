@@ -20,15 +20,11 @@ interface AccountListApiTypes {
 export const accountListSltr = selector<AccountListTypes[]>({
   key: 'accountListSltr',
   get: async ({ get }) => {
-    try {
-      const { result } = await fetcher.get<AccountListApiTypes>({
-        path: '/accounts',
-        accessToken: get(accessTokenAtom),
-      });
-      return result;
-    } catch (e) {
-      throw e;
-    }
+    const { result } = await fetcher.get<AccountListApiTypes>({
+      path: '/accounts',
+      accessToken: get(accessTokenAtom),
+    });
+    return result;
   },
 });
 

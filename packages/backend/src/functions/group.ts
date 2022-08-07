@@ -1,3 +1,4 @@
+/* eslint-disable camelcase */
 import { groupCreateSchema, groupSchema } from '@apiSchema';
 import type { ValidatedEventAPIGatewayProxyEvent } from '@libs/api-gateway';
 import { formatJSONResponse } from '@libs/api-gateway';
@@ -16,11 +17,11 @@ const createFunction: ValidatedEventAPIGatewayProxyEvent<
   const gid = cuid();
   const { group_name } = event.body;
 
-  let result = await query({
+  const groups = await query({
     sql: 'SELECT group_name FROM account_group WHERE uid = ? AND group_name = ?',
     values: [uid, group_name],
   });
-  if (result[0]) {
+  if (groups[0]) {
     throw new BadRequest('Group already in use');
   }
 
@@ -38,7 +39,7 @@ const readFunction = async (
 ): Promise<APIGatewayProxyResult> => {
   const idToken = event.headers.Authorization.split(' ')[1];
   const { uid } = await firebaseAdmin.auth().verifyIdToken(idToken);
-  let groups = await query({
+  const groups = await query({
     sql: `SELECT AG.gid, AG.group_name, AG.created_at, COUNT(A.aid) accounts FROM account_group AG LEFT OUTER JOIN account A ON AG.gid = A.gid WHERE AG.uid = ? GROUP BY AG.gid, AG.group_name, AG.created_at`,
     values: [uid],
   });
@@ -51,12 +52,11 @@ const deleteFunction: ValidatedEventAPIGatewayProxyEvent<
   const idToken = event.headers.Authorization.split(' ')[1];
   const { uid } = await firebaseAdmin.auth().verifyIdToken(idToken);
   const { gid } = event.body;
-  let result = await query({
+  const groups = await query({
     sql: 'SELECT group_name FROM account_group WHERE uid = ? AND gid = ?',
     values: [uid, gid],
   });
-  if (!result[0]) {
-    console.log(result);
+  if (!groups[0]) {
     throw new BadRequest('Not found group');
   }
   await transaction()

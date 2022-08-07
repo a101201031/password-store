@@ -21,17 +21,23 @@ const createFunction: ValidatedEventAPIGatewayProxyEvent<
     .verifyIdToken(event.headers.Authorization.split(' ')[1]);
   const aid = cuid();
 
-  let result = await query({
-    sql: 'SELECT A.service_account FROM account A INNER JOIN account_group AG ON A.gid = AG.gid WHERE AG.uid = ? AND A.service_name = ? AND A.service_account = ? AND A.authentication = ?',
+  const accounts = await query({
+    sql: `SELECT A.service_account 
+      FROM account A 
+      INNER JOIN account_group AG 
+        ON A.gid = AG.gid 
+        WHERE AG.uid = ? 
+        AND A.service_name = ? 
+        AND A.service_account = ? 
+        AND A.authentication = ?`,
     values: [uid, serviceName, serviceAccount, authentication],
   });
-  console.log(result);
-  if (result[0]) {
+  if (accounts[0]) {
     throw new BadRequest('Account already in use');
   }
 
   if (authentication === 'standalone') {
-    let userHashKey: Pick<UserModel, 'hash_key'>[] = await query({
+    const userHashKey: Pick<UserModel, 'hash_key'>[] = await query({
       sql: 'SELECT hash_key FROM user WHERE uid = ?',
       values: [uid],
     });
@@ -44,7 +50,7 @@ const createFunction: ValidatedEventAPIGatewayProxyEvent<
       })
       .commit();
   } else {
-    let result = await query({
+    const result = await query({
       sql: 'SELECT A.aid FROM account A INNER JOIN account_group AG ON A.gid = AG.gid AND AG.uid = ? WHERE A.aid = ?',
       values: [uid, authentication],
     });
@@ -69,15 +75,15 @@ const readFunction = async (
     .auth()
     .verifyIdToken(event.headers.Authorization.split(' ')[1]);
   const { aid } = event.pathParameters;
-  let result = await query({
+  const account = await query({
     sql: 'SELECT A.aid, A.gid, A.service_name, A.service_account, A.authentication, A.password_last_change, A.updated_at, A.created_at FROM account A INNER JOIN account_group AG ON A.gid = AG.gid AND AG.uid = ? WHERE A.aid = ?',
     values: [uid, aid],
   });
-  if (!result[0]) {
+  if (!account[0]) {
     throw new BadRequest('Account not found');
   }
 
-  return formatJSONResponse({ message: 'success', result });
+  return formatJSONResponse({ message: 'success', result: account[0] });
 };
 
 const updateFunction: ValidatedEventAPIGatewayProxyEvent<
@@ -88,46 +94,47 @@ const updateFunction: ValidatedEventAPIGatewayProxyEvent<
     .auth()
     .verifyIdToken(event.headers.Authorization.split(' ')[1]);
 
-  type OriginAccountTypes = Pick<
-    AccountModel,
-    'aid' | 'gid' | 'service_account' | 'authentication' | 'password'
-  >;
-  let result: OriginAccountTypes[] = await query({
+  interface OriginAccountTypes
+    extends Pick<
+      AccountModel,
+      'aid' | 'gid' | 'service_account' | 'authentication' | 'password'
+    > {}
+  const accounts: OriginAccountTypes[] = await query({
     sql: 'SELECT A.aid, A.gid, A.service_account, A.authentication, A.password FROM account a INNER JOIN account_group AG ON AG.gid = A.gid AND AG.uid = ? WHERE A.aid = ?',
     values: [uid, body.aid],
   });
-  if (!result[0]) {
+  if (!accounts[0]) {
     throw new BadRequest('Account not found');
   }
 
-  const originAccount = result[0];
+  const originAccount = accounts[0];
 
-  const modify = {};
+  const modify: Partial<OriginAccountTypes> = {};
   if (body.gid && body.gid !== originAccount.gid) {
-    let result = await query({
+    const result = await query({
       sql: 'SELECT gid FROM account_group WHERE uid = ? AND gid = ?',
       values: [uid, body.gid],
     });
     if (!result[0]) {
       throw new BadRequest('Group not found');
     }
-    modify['gid'] = body.gid;
+    modify.gid = body.gid;
   }
   if (
     body.authentication &&
     body.authentication !== originAccount.authentication &&
     body.authentication !== 'standalone'
   ) {
-    let result = await query({
+    const result = await query({
       sql: 'SELECT A.aid FROM account A INNER JOIN account_group AG ON A.gid = AG.gid AND AG.uid = ? WHERE A.aid = ?',
       values: [uid, body.authentication],
     });
     if (!result[0] || result[0].aid === body.aid) {
       throw new BadRequest('OAuth service invalid');
     }
-    modify['authentication'] = body.authentication;
+    modify.authentication = body.authentication;
   } else if (body.authentication && body.authentication === 'standalone') {
-    modify['authenticaiton'] = body.authentication;
+    modify.authentication = body.authentication;
   }
 
   const updateQuery = {

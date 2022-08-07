@@ -50,7 +50,7 @@ export const groupInfoSltr = selectorFamily<
   Pick<AccountGroupModel, 'gid' | 'group_name'>,
   SelectorMapper<GroupInfoParam>
 >({
-  key: 'groupNameSltr',
+  key: 'groupInfoSltr',
   get:
     ({ gid }) =>
     ({ get }) => {
