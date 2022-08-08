@@ -9,11 +9,12 @@ interface ProtectedRouteProps {
 function ProtectedRoute({ redirectPath = '/signin' }: ProtectedRouteProps) {
   let location = useLocation();
   const accessToken = useRecoilValue(accessTokenAtom);
-  if (!accessToken) {
-    return <Navigate to={redirectPath} state={{ from: location }} replace />;
-  }
 
-  return <Outlet />;
+  return accessToken ? (
+    <Outlet />
+  ) : (
+    <Navigate to={redirectPath} state={{ from: location }} replace />
+  );
 }
 
 export { ProtectedRoute };
