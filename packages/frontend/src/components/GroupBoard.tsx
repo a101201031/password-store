@@ -1,3 +1,4 @@
+import AddIcon from '@mui/icons-material/Add';
 import CancelIcon from '@mui/icons-material/Cancel';
 import EditIcon from '@mui/icons-material/Edit';
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
@@ -5,6 +6,7 @@ import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
 import SearchIcon from '@mui/icons-material/Search';
 import {
   Box,
+  Button,
   Collapse,
   Container,
   Divider,
@@ -33,15 +35,16 @@ import {
   CircularIndicator,
 } from 'components';
 import type { AccountGroupModel } from 'model';
+import type { ChangeEventHandler, MouseEventHandler } from 'react';
 import {
-  ChangeEventHandler,
   Fragment,
-  MouseEventHandler,
+  useCallback,
   useEffect,
   useMemo,
   useRef,
   useState,
 } from 'react';
+import { Link } from 'react-router-dom';
 import { useRecoilState, useRecoilValue } from 'recoil';
 import type { AccountListByGroupTypes, GroupTableRowTypes } from 'store';
 import {
@@ -82,6 +85,16 @@ function GroupBoard() {
                 columnSpacing={{ xs: 1, sm: 2, md: 3 }}
                 justifyContent="end"
               >
+                <Grid item>
+                  <Button
+                    component={Link}
+                    to="/group/add"
+                    variant="outlined"
+                    startIcon={<AddIcon />}
+                  >
+                    Add Account
+                  </Button>
+                </Grid>
                 <Grid item>
                   <GroupSearchField />
                 </Grid>
@@ -166,7 +179,7 @@ function GroupTable() {
             header.column.getCanFilter() && setFilterColumn(header.column),
         ),
       );
-  });
+  }, [setFilterColumn, table]);
 
   return (
     <MuiTable>
@@ -332,11 +345,14 @@ function GroupSearchField() {
 
   const handleChange: ChangeEventHandler<
     HTMLTextAreaElement | HTMLInputElement
-  > = (e) => {
-    const { value } = e.target;
-    setFilterValue(value);
-    filterColumn?.setFilterValue(value);
-  };
+  > = useCallback(
+    (e) => {
+      const { value } = e.target;
+      setFilterValue(value);
+      filterColumn?.setFilterValue(value);
+    },
+    [filterColumn],
+  );
 
   const handleClearIconClick: MouseEventHandler<HTMLButtonElement> = () => {
     setFilterValue('');
