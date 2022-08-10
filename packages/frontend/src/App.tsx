@@ -4,6 +4,8 @@ import {
   AccountBoard,
   AccountEdit,
   AccountEditBoard,
+  Group,
+  GroupAdd,
   GroupBoard,
   Main,
 } from 'components';
@@ -22,6 +24,9 @@ export const App = () => (
           <Route path=":aid" element={<AccountEdit />} />
         </Route>
         <Route path="/groups" element={<GroupBoard />} />
+        <Route path="/group" element={<Group />}>
+          <Route path="add" element={<GroupAdd />} />
+        </Route>
       </Route>
     </Route>
     <Route path="/signin" element={<SignIn />} />

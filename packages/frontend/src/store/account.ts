@@ -4,7 +4,8 @@ import { AccountModel, AccountGroupModel } from 'model';
 import { accessTokenAtom } from './token';
 import { SelectorMapper } from 'store';
 import { concat } from 'lodash';
-interface AccountListTypes
+
+export interface AccountListTypes
   extends Pick<AccountGroupModel, 'gid' | 'group_name'> {
   accounts: Pick<
     AccountModel,
