@@ -7,6 +7,7 @@ import {
   Group,
   GroupAdd,
   GroupBoard,
+  GroupEdit,
   Main,
 } from 'components';
 import { SignIn, SignUp } from 'components/sign';
@@ -26,6 +27,7 @@ export const App = () => (
         <Route path="/groups" element={<GroupBoard />} />
         <Route path="/group" element={<Group />}>
           <Route path="add" element={<GroupAdd />} />
+          <Route path=":gid" element={<GroupEdit />} />
         </Route>
       </Route>
     </Route>

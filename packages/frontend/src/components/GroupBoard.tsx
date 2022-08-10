@@ -148,8 +148,13 @@ function GroupTable() {
       {
         header: 'Modify',
         accessorKey: 'gid',
-        cell: () => (
-          <IconButton aria-label="delete" size="large">
+        cell: (v) => (
+          <IconButton
+            component={Link}
+            to={`/group/${v.getValue()}`}
+            aria-label="delete"
+            size="large"
+          >
             <EditIcon fontSize="inherit" />
           </IconButton>
         ),
