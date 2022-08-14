@@ -308,7 +308,9 @@ function GroupEdit() {
             name="group_name"
             defaultValue={`${groupInfo.group_name}`}
             control={control}
-            render={({ field }) => <TextField {...field} fullWidth />}
+            render={({ field }) => (
+              <TextField {...field} fullWidth margin="normal" />
+            )}
           />
         </Grid>
         <Grid item xs={12}>
@@ -613,7 +615,9 @@ function GroupAdd() {
             name="group_name"
             defaultValue=""
             control={control}
-            render={({ field }) => <TextField {...field} fullWidth />}
+            render={({ field }) => (
+              <TextField {...field} fullWidth margin="normal" />
+            )}
           />
         </Grid>
         <Grid item xs={12}>
