@@ -4,7 +4,7 @@ export interface UserModel {
   user_name: string;
   password: string;
   old_password?: string;
-  last_password_change: Date;
+  last_password_changed: Date;
   hash_key: string;
   two_fact_auth_type?: string;
   created_at: Date;

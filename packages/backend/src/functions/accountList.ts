@@ -11,21 +11,21 @@ const readFunction = async (
   type QueryReturnTypes = Pick<AccountGroupModel, 'gid' | 'group_name'> &
     Omit<
       AccountModel,
-      'password' | 'password_last_change' | 'created_at' | 'updated_at'
+      'password' | 'last_password_changed' | 'created_at' | 'updated_at'
     >;
 
   const { uid } = await firebaseAdmin
     .auth()
     .verifyIdToken(event.headers.Authorization.split(' ')[1]);
 
-  const result: QueryReturnTypes[] = await query({
+  const accountJoinGroup: QueryReturnTypes[] = await query({
     sql: 'SELECT AG.gid, AG.group_name, A.aid, A.service_name, A.service_account, A.authentication FROM account_group AG INNER JOIN account A ON AG.gid = A.gid AND AG.uid = ? ORDER BY AG.gid',
     values: [uid],
   });
 
   const groupInAccount = [];
 
-  result.forEach((val) => {
+  accountJoinGroup.forEach((val) => {
     const groupIdx = groupInAccount.findIndex((v) => v.gid === val.gid);
     const account = {
       aid: val.aid,

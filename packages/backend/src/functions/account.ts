@@ -76,7 +76,7 @@ const readFunction = async (
     .verifyIdToken(event.headers.Authorization.split(' ')[1]);
   const { aid } = event.pathParameters;
   const account = await query({
-    sql: 'SELECT A.aid, A.gid, A.service_name, A.service_account, A.authentication, A.password_last_change, A.updated_at, A.created_at FROM account A INNER JOIN account_group AG ON A.gid = AG.gid AND AG.uid = ? WHERE A.aid = ?',
+    sql: 'SELECT A.aid, A.gid, A.service_name, A.service_account, A.authentication, A.last_password_changed, A.updated_at, A.created_at FROM account A INNER JOIN account_group AG ON A.gid = AG.gid AND AG.uid = ? WHERE A.aid = ?',
     values: [uid, aid],
   });
   if (!account[0]) {

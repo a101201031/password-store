@@ -13,7 +13,7 @@ const signUpFunction: ValidatedEventAPIGatewayProxyEvent<
   typeof signUpSchema.properties.body
 > = async (event) => {
   const { name, email, password } = event.body;
-  let result = await query({
+  const result = await query({
     sql: 'SELECT email FROM user WHERE email = ?',
     values: [email],
   });
@@ -32,7 +32,7 @@ const signUpFunction: ValidatedEventAPIGatewayProxyEvent<
     const hashKey = await makeUserHash(enPassword);
     await transaction()
       .query({
-        sql: 'INSERT INTO user(email, uid, user_name, password, hash_key, last_password_change) VALUES(?, ?, ?, ?, ?, SYSDATE())',
+        sql: 'INSERT INTO user(email, uid, user_name, password, hash_key, last_password_changed) VALUES(?, ?, ?, ?, ?, SYSDATE())',
         values: [email, user.uid, name, enPassword, hashKey],
       })
       .query({

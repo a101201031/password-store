@@ -301,16 +301,18 @@ function AccountEdit() {
         </Grid>
         <Grid item xs={12} sm={7}>
           <Typography variant="body1" sx={{ fontWeight: 'bold' }}>
-            Password Last Change
+            Last Password Changed
           </Typography>
           <Typography
             variant="body1"
             color={
-              nowDiffDays(accountInfo.password_last_change) >= 90 ? 'error' : ''
+              nowDiffDays(accountInfo.last_password_changed) >= 90
+                ? 'error'
+                : ''
             }
           >
-            {dateToString(accountInfo.password_last_change)} :{' '}
-            {nowDiffDays(accountInfo.password_last_change)} days ago
+            {dateToString(accountInfo.last_password_changed)} :{' '}
+            {nowDiffDays(accountInfo.last_password_changed)} days ago
           </Typography>
         </Grid>
         <Grid item xs={12} sm={6}>
