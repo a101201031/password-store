@@ -5,12 +5,12 @@ export const accountCreateSchema = {
       type: 'object',
       properties: {
         gid: { type: 'string' },
-        serviceName: { type: 'string' },
+        service_name: { type: 'string' },
         authentication: { type: 'string' },
-        serviceAccount: { type: 'string' },
+        service_account: { type: 'string' },
         password: { type: 'string' },
       },
-      required: ['gid', 'serviceName', 'serviceAccount'],
+      required: ['gid', 'service_name', 'service_account'],
     },
   },
 } as const;
