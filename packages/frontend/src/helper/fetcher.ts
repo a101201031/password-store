@@ -73,7 +73,7 @@ const put = async <T = any>({
   accessToken,
 }: PostPutPayload) => {
   const queryString = queryParamsParser(queryParams);
-  const { data } = await axiosClient.post<T>(
+  const { data } = await axiosClient.put<T>(
     `${path}${queryString}`,
     bodyParams,
     {
