@@ -14,7 +14,7 @@ import {
   Badge,
   List,
 } from '@mui/material';
-import { MainListItems, secondaryListItems } from 'components';
+import { MainListItems, secondaryListItems, CustomSnackbar } from 'components';
 import { useState } from 'react';
 import { Outlet } from 'react-router-dom';
 
@@ -148,6 +148,7 @@ function Main() {
       >
         <Toolbar />
         <Outlet />
+        <CustomSnackbar />
       </Box>
     </Box>
   );
