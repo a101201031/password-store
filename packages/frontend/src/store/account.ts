@@ -2,7 +2,7 @@ import { atom, selector, selectorFamily } from 'recoil';
 import { fetcher } from 'helper';
 import { AccountModel, AccountGroupModel } from 'model';
 import { accessTokenAtom } from './token';
-import { SelectorMapper } from 'store';
+import { SelectorMapper, selectorTrigger } from 'store';
 import { concat } from 'lodash';
 
 export interface AccountListTypes
@@ -21,11 +21,15 @@ interface AccountListApiTypes {
 export const accountListSltr = selector<AccountListTypes[]>({
   key: 'accountListSltr',
   get: async ({ get }) => {
+    get(selectorTrigger('accountList'));
     const { result } = await fetcher.get<AccountListApiTypes>({
       path: '/accounts',
       accessToken: get(accessTokenAtom),
     });
     return result;
+  },
+  set: ({ set }) => {
+    set(selectorTrigger('accountList'), (count) => count + 1);
   },
 });
 

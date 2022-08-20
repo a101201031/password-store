@@ -1,4 +1,4 @@
 export * from './account';
 export * from './group';
-export * from './selectorMapper';
+export * from './selectorControl';
 export * from './token';

@@ -2,7 +2,7 @@ import { Column } from '@tanstack/react-table';
 import { dateToString, fetcher } from 'helper';
 import { AccountGroupModel } from 'model';
 import { atom, selector, selectorFamily } from 'recoil';
-import { SelectorMapper } from 'store';
+import { SelectorMapper, selectorTrigger } from 'store';
 import { accessTokenAtom } from './token';
 
 interface GroupListTypes
@@ -18,12 +18,14 @@ interface GroupListApiTypes {
 export const groupListSltr = selector<GroupListTypes[]>({
   key: 'groupListSltr',
   get: async ({ get }) => {
+    get(selectorTrigger('groupList'));
     const { groups } = await fetcher.get<GroupListApiTypes>({
       path: '/group',
       accessToken: get(accessTokenAtom),
     });
     return groups;
   },
+  set: ({ set }) => set(selectorTrigger('groupList'), (count) => count + 1),
 });
 
 export interface GroupTableRowTypes extends Omit<GroupListTypes, 'created_at'> {
