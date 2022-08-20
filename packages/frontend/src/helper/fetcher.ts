@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { chain } from 'lodash';
+import { chain, keys } from 'lodash';
 import { ENV } from 'constants/ENV';
 
 const axiosClient = axios.create({
@@ -24,14 +24,17 @@ interface GetDeletePayload {
 const planeFetcher = axiosClient;
 
 const queryParamsParser = (queryParams: { [key: string]: string } = {}) =>
-  chain(queryParams)
-    .toPairs()
-    .reduce((urlSearchParams, keyValuePair) => {
-      urlSearchParams.set(keyValuePair[0], keyValuePair[1]);
-      return urlSearchParams;
-    }, new URLSearchParams())
-    .value()
-    .toString();
+  keys(queryParams).length === 0
+    ? ''
+    : '?' +
+      chain(queryParams)
+        .toPairs()
+        .reduce((urlSearchParams, keyValuePair) => {
+          urlSearchParams.set(keyValuePair[0], keyValuePair[1]);
+          return urlSearchParams;
+        }, new URLSearchParams())
+        .value()
+        .toString();
 
 const get = async <T = any>({
   path,
