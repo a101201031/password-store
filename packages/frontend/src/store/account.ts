@@ -85,11 +85,17 @@ export const accountInfoSltr = selectorFamily<
   get:
     ({ aid }) =>
     async ({ get }) => {
+      get(selectorTrigger('accountInfo'));
       const { result } = await fetcher.get<AccountInfoApiTypes>({
         path: `/account/${aid}`,
         accessToken: get(accessTokenAtom),
       });
       return result;
+    },
+  set:
+    ({ aid }) =>
+    ({ set }) => {
+      set(selectorTrigger('accountInfo'), (count) => count + 1);
     },
 });
 

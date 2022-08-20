@@ -6,6 +6,7 @@ import {
   accountCreateSchema,
   accountUpdateSchema,
   groupCreateSchema,
+  accountDeleteSchema,
 } from '@apiSchema';
 
 export default {
@@ -134,6 +135,22 @@ export default {
       },
     ],
   },
+  deleteAccount: {
+    handler: `${handlerPath(__dirname)}/functions/account.deleteAccount`,
+    events: [
+      {
+        http: {
+          method: 'delete',
+          path: 'account',
+          request: {
+            schemas: {
+              'application/json': accountDeleteSchema,
+            },
+          },
+        },
+      },
+    ],
+  },
   readAccountList: {
     handler: `${handlerPath(__dirname)}/functions/accountList.readAccountList`,
     events: [
@@ -141,6 +158,17 @@ export default {
         http: {
           method: 'get',
           path: 'accounts',
+        },
+      },
+    ],
+  },
+  readUser: {
+    handler: `${handlerPath(__dirname)}/functions/user.readUser`,
+    events: [
+      {
+        http: {
+          method: 'get',
+          path: 'user',
         },
       },
     ],

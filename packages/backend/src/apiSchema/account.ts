@@ -30,3 +30,17 @@ export const accountUpdateSchema = {
     },
   },
 } as const;
+
+export const accountDeleteSchema = {
+  type: 'object',
+  properties: {
+    queryStringParameters: {
+      type: 'object',
+      properties: {
+        aid: { type: 'string' },
+      },
+      required: ['aid'],
+    },
+  },
+  required: ['queryStringParameters'],
+} as const;

@@ -10,6 +10,11 @@ import {
   Button,
   Container,
   createFilterOptions,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogContentText,
+  DialogTitle,
   Divider,
   Grid,
   IconButton,
@@ -24,19 +29,22 @@ import {
 } from '@mui/material';
 import { AuthAsyncBoundary, CircularIndicator } from 'components';
 import { SERVICES } from 'constants/SERVICES';
-import { dateToString, nowDiffDays } from 'helper';
+import { dateToString, fetcher, nowDiffDays } from 'helper';
 import { AccountModel } from 'model';
-import type { ChangeEvent } from 'react';
+import type { ChangeEvent, MouseEventHandler } from 'react';
 import { useState } from 'react';
 import type { SubmitHandler } from 'react-hook-form';
 import { Controller, useForm } from 'react-hook-form';
-import { Link, Outlet, useParams } from 'react-router-dom';
-import { useRecoilValue } from 'recoil';
+import { Link, Outlet, useNavigate, useParams } from 'react-router-dom';
+import { useRecoilValue, useResetRecoilState, useSetRecoilState } from 'recoil';
 import {
+  accessTokenAtom,
   accountInfoSltr,
+  accountListSltr,
   accountOAuthListSltr,
   groupInfoSltr,
   groupListSltr,
+  snackbarAtom,
 } from 'store';
 import { accountPasswordSchema } from 'validation';
 
@@ -68,22 +76,54 @@ interface AccountEditFormTypes
 
 function AccountEdit() {
   const { aid } = useParams() as { aid: string };
+  const navigate = useNavigate();
+
   const accountInfo = useRecoilValue(accountInfoSltr({ aid }));
   const groupList = useRecoilValue(groupListSltr);
   const groupInfo = useRecoilValue(groupInfoSltr({ gid: accountInfo.gid }));
   const accountOAuthList = useRecoilValue(accountOAuthListSltr);
+  const idToken = useRecoilValue(accessTokenAtom);
+  const setSnackbar = useSetRecoilState(snackbarAtom);
+  const resetAccountInfo = useResetRecoilState(accountInfoSltr({ aid }));
+  const resetAccountList = useResetRecoilState(accountListSltr);
+  const resetGroupList = useResetRecoilState(groupListSltr);
+
   const defaultAccountOAuth = accountOAuthList.filter(
     (v) => v.aid === accountInfo.authentication,
   )[0];
 
   const { control, handleSubmit } = useForm<AccountEditFormTypes>();
-  const [show, setShow] = useState(false);
+  const [showPassword, setShowpassword] = useState(false);
   const [safetyScore, setSafetyScore] = useState<number>(0);
+  const [openReminder, setOpenReminder] = useState<boolean>(false);
 
-  const onSubmit: SubmitHandler<AccountEditFormTypes> = (data) => {};
+  const onSubmit: SubmitHandler<AccountEditFormTypes> = async (data) => {
+    const { password, gid, authentication } = data;
+    console.log({ aid, password, gid, authentication });
+    await fetcher.put<{ message: string }>({
+      path: '/account',
+      bodyParams: {
+        aid,
+        password,
+        gid,
+        authentication,
+      },
+      accessToken: idToken,
+    });
+
+    resetAccountInfo();
+    resetAccountList();
+    resetGroupList();
+    setSnackbar({
+      open: true,
+      level: 'success',
+      message: 'Account has been modified successfully.',
+    });
+    navigate('/accounts');
+  };
 
   const handleShowPasswordClick = () => {
-    setShow(!show);
+    setShowpassword(!showPassword);
   };
 
   const handlePasswordChange = async (
@@ -98,6 +138,30 @@ function AccountEdit() {
       const err = e as { errors: string[] };
       setSafetyScore(100 - err.errors.length * 20);
     }
+  };
+
+  const handleReminderOpen: MouseEventHandler<HTMLButtonElement> = () => {
+    setOpenReminder(true);
+  };
+
+  const handleReminderClose: MouseEventHandler<HTMLButtonElement> = () => {
+    setOpenReminder(false);
+  };
+
+  const handleDeleteClick: MouseEventHandler<HTMLButtonElement> = async () => {
+    await fetcher.del({
+      path: '/account',
+      queryParams: { aid },
+      accessToken: idToken,
+    });
+    resetAccountList();
+    resetGroupList();
+    setSnackbar({
+      open: true,
+      level: 'success',
+      message: 'Account has been deleted successfully.',
+    });
+    navigate('/accounts');
   };
 
   const safetyBarColor: () =>
@@ -119,6 +183,28 @@ function AccountEdit() {
         return undefined;
     }
   };
+
+  function DeleteReminder() {
+    return (
+      <Dialog open={openReminder} onClose={handleReminderClose}>
+        <DialogTitle>{`Are you sure you want to delete "${accountInfo.service_account}"?`}</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            This account will be deleted immediately. You can't undo this
+            action.
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button autoFocus onClick={handleReminderClose}>
+            Cancle
+          </Button>
+          <Button color="error" onClick={handleDeleteClick}>
+            Delete
+          </Button>
+        </DialogActions>
+      </Dialog>
+    );
+  }
 
   return (
     <>
@@ -219,7 +305,7 @@ function AccountEdit() {
               <TextField
                 margin="normal"
                 fullWidth
-                type={show ? 'text' : 'password'}
+                type={showPassword ? 'text' : 'password'}
                 id="password"
                 autoComplete="current-password"
                 InputProps={{
@@ -229,7 +315,7 @@ function AccountEdit() {
                         sx={{ padding: 0 }}
                         onClick={handleShowPasswordClick}
                       >
-                        {show ? <VisibilityOff /> : <Visibility />}
+                        {showPassword ? <VisibilityOff /> : <Visibility />}
                       </IconButton>
                     </InputAdornment>
                   ),
@@ -370,10 +456,12 @@ function AccountEdit() {
                     variant="outlined"
                     startIcon={<DeleteIcon />}
                     color="error"
+                    onClick={handleReminderOpen}
                   >
                     Delete
                   </Button>
                 </Grid>
+                <DeleteReminder />
               </Grid>
             </Grid>
           </Grid>
@@ -392,12 +480,40 @@ interface AccountAddFormTypes
 function AccountAdd() {
   const groupList = useRecoilValue(groupListSltr);
   const accountOAuthList = useRecoilValue(accountOAuthListSltr);
+  const idToken = useRecoilValue(accessTokenAtom);
+  const setSnackbar = useSetRecoilState(snackbarAtom);
+  const resetAccountList = useResetRecoilState(accountListSltr);
+  const resetGroupList = useResetRecoilState(groupListSltr);
 
   const { control, handleSubmit } = useForm<AccountAddFormTypes>();
   const [show, setShow] = useState(false);
   const [safetyScore, setSafetyScore] = useState<number>(0);
 
-  const onSubmit: SubmitHandler<AccountAddFormTypes> = (data) => {};
+  const navigate = useNavigate();
+
+  const onSubmit: SubmitHandler<AccountAddFormTypes> = async (data) => {
+    const { service_name, service_account, password, gid, authentication } =
+      data;
+    await fetcher.post<{ message: string }>({
+      path: '/account',
+      bodyParams: {
+        service_name,
+        service_account,
+        password,
+        gid,
+        authentication,
+      },
+      accessToken: idToken,
+    });
+    resetAccountList();
+    resetGroupList();
+    setSnackbar({
+      open: true,
+      level: 'success',
+      message: 'Account has been added successfully.',
+    });
+    navigate('/accounts');
+  };
 
   interface AutocompleteItemTypes extends Pick<AccountModel, 'service_name'> {
     inputValue?: string;
@@ -637,6 +753,9 @@ function AccountAdd() {
                 fullWidth
                 id="authentication"
                 options={accountOAuthList}
+                defaultValue={accountOAuthList.find(
+                  (v) => v.aid === 'standalone',
+                )}
                 groupBy={(o) => o.group_name}
                 getOptionLabel={(o) =>
                   o.aid === 'standalone'

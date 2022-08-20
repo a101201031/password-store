@@ -1,5 +1,9 @@
 /* eslint-disable camelcase */
-import { accountCreateSchema, accountUpdateSchema } from '@apiSchema';
+import {
+  accountCreateSchema,
+  accountDeleteSchema,
+  accountUpdateSchema,
+} from '@apiSchema';
 import type { ValidatedEventAPIGatewayProxyEvent } from '@libs/api-gateway';
 import { formatJSONResponse } from '@libs/api-gateway';
 import { authMiddyfy } from '@libs/lambda';
@@ -172,6 +176,41 @@ const updateFunction: ValidatedEventAPIGatewayProxyEvent<
   return formatJSONResponse({ message: 'success' });
 };
 
+const deleteFunction = async (
+  event: APIGatewayProxyEvent,
+): Promise<APIGatewayProxyResult> => {
+  const { aid } = event.queryStringParameters;
+  const { uid } = await firebaseAdmin
+    .auth()
+    .verifyIdToken(event.headers.Authorization.split(' ')[1]);
+
+  const account = await query({
+    sql: `
+    SELECT A.service_account
+    FROM account A 
+    INNER JOIN account_group AG 
+      ON A.gid = AG.gid 
+      WHERE AG.uid = ?
+        AND A.aid = ?`,
+    values: [uid, aid],
+  });
+  if (!account[0]) {
+    throw new BadRequest('Account not found');
+  }
+  await transaction()
+    .query({
+      sql: `
+      DELETE A FROM account A
+      INNER JOIN account_group AG
+        ON A.gid = AG.gid
+        WHERE AG.uid = ?
+          AND A.aid = ?`,
+      values: [uid, aid],
+    })
+    .commit();
+  return formatJSONResponse({ message: 'success' });
+};
+
 export const createAccount = authMiddyfy({
   handler: createFunction,
   inputSchema: accountCreateSchema,
@@ -184,4 +223,9 @@ export const readAccount = authMiddyfy({
 export const updateAccount = authMiddyfy({
   handler: updateFunction,
   inputSchema: accountUpdateSchema,
+});
+
+export const deleteAccount = authMiddyfy({
+  handler: deleteFunction,
+  inputSchema: accountDeleteSchema,
 });
