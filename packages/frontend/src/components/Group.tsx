@@ -1,4 +1,5 @@
 import CancelIcon from '@mui/icons-material/Cancel';
+import DeleteIcon from '@mui/icons-material/Delete';
 import NavigateNextIcon from '@mui/icons-material/NavigateNext';
 import SaveIcon from '@mui/icons-material/Save';
 import {
@@ -8,6 +9,11 @@ import {
   CardHeader,
   Checkbox,
   Container,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogContentText,
+  DialogTitle,
   Divider,
   Grid,
   Link as MuiLink,
@@ -21,14 +27,20 @@ import {
   Typography,
 } from '@mui/material';
 import { AuthAsyncBoundary, CircularIndicator } from 'components';
+import { fetcher } from 'helper';
 import type { AccountGroupModel, AccountModel } from 'model';
-import type { ReactNode } from 'react';
+import type { MouseEventHandler, ReactNode } from 'react';
 import { Fragment, useCallback, useState } from 'react';
 import type { SubmitHandler } from 'react-hook-form';
 import { Controller, useForm } from 'react-hook-form';
-import { Link, Outlet, useParams } from 'react-router-dom';
-import { useRecoilValue } from 'recoil';
-import type { AccountListTypes } from 'store';
+import { Link, Outlet, useNavigate, useParams } from 'react-router-dom';
+import { useRecoilValue, useResetRecoilState, useSetRecoilState } from 'recoil';
+import {
+  accessTokenAtom,
+  AccountListTypes,
+  groupListSltr,
+  snackbarAtom,
+} from 'store';
 import { accountListSltr, groupInfoSltr } from 'store';
 
 function Group() {
@@ -81,11 +93,42 @@ interface GroupAddEditFormTypes extends Pick<AccountGroupModel, 'group_name'> {}
 
 function GroupEdit() {
   const { gid } = useParams() as { gid: string };
+  const navigate = useNavigate();
+
+  const idToken = useRecoilValue(accessTokenAtom);
   const accountList = useRecoilValue(accountListSltr);
   const groupInfo = useRecoilValue(groupInfoSltr({ gid }));
+  const setSnackbar = useSetRecoilState(snackbarAtom);
+  const resetAccountList = useResetRecoilState(accountListSltr);
+  const resetGroupList = useResetRecoilState(groupListSltr);
+
   const { control, handleSubmit } = useForm<GroupAddEditFormTypes>();
 
-  const onSubmit: SubmitHandler<GroupAddEditFormTypes> = (data) => {};
+  const onSubmit: SubmitHandler<GroupAddEditFormTypes> = async (data) => {
+    const { group_name } = data;
+    const member = right.reduce(
+      (p, c) => p.concat(c.accounts.map((v) => v.aid)),
+      [] as string[],
+    );
+    await fetcher.put({
+      path: '/group',
+      bodyParams: {
+        gid,
+        group_name,
+        member,
+      },
+      accessToken: idToken,
+    });
+    resetAccountList();
+    resetGroupList();
+    setSnackbar({
+      open: true,
+      level: 'success',
+      message: 'Group has been modified successfully.',
+    });
+    navigate('/groups');
+  };
+  const [openReminder, setOpenReminder] = useState<boolean>(false);
 
   const [checked, setChecked] = useState<AccountListTypes[]>(
     accountList.map((v) => ({ ...v, accounts: [] })),
@@ -177,86 +220,134 @@ function GroupEdit() {
     setChecked(not(checked, rightChecked));
   };
 
-  const customList = (title: ReactNode, itemGroups: AccountListTypes[]) => (
-    <Card>
-      <CardHeader
-        sx={{ px: 2, py: 1 }}
-        avatar={
-          <Checkbox
-            onClick={handleToggleAll(itemGroups)}
-            checked={
-              numberOfChecked(itemGroups) ===
-                itemGroups.reduce((p, c) => p + c.accounts.length, 0) &&
-              itemGroups.reduce((p, c) => p + c.accounts.length, 0) !== 0
-            }
-            indeterminate={
-              numberOfChecked(itemGroups) !==
-                itemGroups.reduce((p, c) => p + c.accounts.length, 0) &&
-              numberOfChecked(itemGroups) !== 0
-            }
-            disabled={itemGroups.length === 0}
-            inputProps={{
-              'aria-label': 'all items selected',
-            }}
-          />
-        }
-        title={title}
-        subheader={`${numberOfChecked(itemGroups)}/${itemGroups.reduce(
-          (p, c) => p + c.accounts.length,
-          0,
-        )} selected`}
-      />
-      <Divider />
-      <List
-        sx={{
-          width: 340,
-          height: 320,
-          bgcolor: 'background.paper',
-          overflow: 'auto',
-        }}
-        dense
-        component="div"
-        role="list"
-      >
-        {itemGroups.map((items) =>
-          items.accounts.length === 0 ? null : (
-            <Fragment key={items.gid}>
-              <ListSubheader>{items.group_name}</ListSubheader>
-              {items.accounts.map((item) => (
-                <ListItem
-                  key={item.aid}
-                  role="listitem"
-                  button
-                  onClick={handleToggle(item)}
-                >
-                  <ListItemIcon sx={{ pl: 2 }}>
-                    <Checkbox
-                      checked={
-                        !!checked.find(
-                          (group) =>
-                            !!group.accounts.find(
-                              (account) => account.aid === item.aid,
-                            ),
-                        )
-                      }
-                      tabIndex={-1}
-                      disableRipple
-                    />
-                  </ListItemIcon>
-                  <ListItemText
-                    primary={item.service_account}
-                    secondary={item.service_name}
-                  />
-                </ListItem>
-              ))}
-            </Fragment>
-          ),
-        )}
+  const handleReminderOpen: MouseEventHandler<HTMLButtonElement> = () => {
+    setOpenReminder(true);
+  };
 
-        <ListItem />
-      </List>
-    </Card>
-  );
+  const handleReminderClose: MouseEventHandler<HTMLButtonElement> = () => {
+    setOpenReminder(false);
+  };
+
+  const handleDeleteClick: MouseEventHandler<HTMLButtonElement> = async () => {
+    await fetcher.del({
+      path: '/group',
+      queryParams: { gid },
+      accessToken: idToken,
+    });
+    resetAccountList();
+    resetGroupList();
+    setSnackbar({
+      open: true,
+      level: 'success',
+      message: 'Group has been deleted successfully.',
+    });
+    navigate('/groups');
+  };
+
+  function customList(title: ReactNode, itemGroups: AccountListTypes[]) {
+    return (
+      <Card>
+        <CardHeader
+          sx={{ px: 2, py: 1 }}
+          avatar={
+            <Checkbox
+              onClick={handleToggleAll(itemGroups)}
+              checked={
+                numberOfChecked(itemGroups) ===
+                  itemGroups.reduce((p, c) => p + c.accounts.length, 0) &&
+                itemGroups.reduce((p, c) => p + c.accounts.length, 0) !== 0
+              }
+              indeterminate={
+                numberOfChecked(itemGroups) !==
+                  itemGroups.reduce((p, c) => p + c.accounts.length, 0) &&
+                numberOfChecked(itemGroups) !== 0
+              }
+              disabled={itemGroups.length === 0}
+              inputProps={{
+                'aria-label': 'all items selected',
+              }}
+            />
+          }
+          title={title}
+          subheader={`${numberOfChecked(itemGroups)}/${itemGroups.reduce(
+            (p, c) => p + c.accounts.length,
+            0,
+          )} selected`}
+        />
+        <Divider />
+        <List
+          sx={{
+            width: 340,
+            height: 320,
+            bgcolor: 'background.paper',
+            overflow: 'auto',
+          }}
+          dense
+          component="div"
+          role="list"
+        >
+          {itemGroups.map((items) =>
+            items.accounts.length === 0 ? null : (
+              <Fragment key={items.gid}>
+                <ListSubheader>{items.group_name}</ListSubheader>
+                {items.accounts.map((item) => (
+                  <ListItem
+                    key={item.aid}
+                    role="listitem"
+                    button
+                    onClick={handleToggle(item)}
+                  >
+                    <ListItemIcon sx={{ pl: 2 }}>
+                      <Checkbox
+                        checked={
+                          !!checked.find(
+                            (group) =>
+                              !!group.accounts.find(
+                                (account) => account.aid === item.aid,
+                              ),
+                          )
+                        }
+                        tabIndex={-1}
+                        disableRipple
+                      />
+                    </ListItemIcon>
+                    <ListItemText
+                      primary={item.service_account}
+                      secondary={item.service_name}
+                    />
+                  </ListItem>
+                ))}
+              </Fragment>
+            ),
+          )}
+
+          <ListItem />
+        </List>
+      </Card>
+    );
+  }
+
+  function DeleteReminder() {
+    return (
+      <Dialog open={openReminder} onClose={handleReminderClose}>
+        <DialogTitle>{`Are you sure you want to delete "${groupInfo.group_name}"?`}</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            This account will be deleted immediately. You can't undo this
+            action.
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button autoFocus onClick={handleReminderClose}>
+            Cancle
+          </Button>
+          <Button color="error" onClick={handleDeleteClick}>
+            Delete
+          </Button>
+        </DialogActions>
+      </Dialog>
+    );
+  }
 
   return (
     <>
@@ -387,7 +478,19 @@ function GroupEdit() {
                 container
                 justifyContent="end"
                 columnSpacing={{ xs: 1, sm: 2 }}
-              ></Grid>
+              >
+                <Grid item>
+                  <Button
+                    variant="outlined"
+                    startIcon={<DeleteIcon />}
+                    color="error"
+                    onClick={handleReminderOpen}
+                  >
+                    Delete
+                  </Button>
+                </Grid>
+                <DeleteReminder />
+              </Grid>
             </Grid>
           </Grid>
         </Grid>
@@ -397,10 +500,39 @@ function GroupEdit() {
 }
 
 function GroupAdd() {
+  const navigate = useNavigate();
+
   const accountList = useRecoilValue(accountListSltr);
+  const idToken = useRecoilValue(accessTokenAtom);
+  const setSnackbar = useSetRecoilState(snackbarAtom);
+  const resetAccountList = useResetRecoilState(accountListSltr);
+  const resetGroupList = useResetRecoilState(groupListSltr);
+
   const { control, handleSubmit } = useForm<GroupAddEditFormTypes>();
 
-  const onSubmit: SubmitHandler<GroupAddEditFormTypes> = (data) => {};
+  const onSubmit: SubmitHandler<GroupAddEditFormTypes> = async (data) => {
+    const { group_name } = data;
+    const member = right.reduce(
+      (p, c) => p.concat(c.accounts.map((v) => v.aid)),
+      [] as string[],
+    );
+    await fetcher.post({
+      path: '/group',
+      bodyParams: {
+        group_name,
+        member,
+      },
+      accessToken: idToken,
+    });
+    resetAccountList();
+    resetGroupList();
+    setSnackbar({
+      open: true,
+      level: 'success',
+      message: 'Group has been added successfully.',
+    });
+    navigate('/groups');
+  };
 
   const [checked, setChecked] = useState<AccountListTypes[]>(
     accountList.map((v) => ({ ...v, accounts: [] })),
@@ -616,7 +748,7 @@ function GroupAdd() {
             defaultValue=""
             control={control}
             render={({ field }) => (
-              <TextField {...field} fullWidth margin="normal" />
+              <TextField {...field} fullWidth margin="normal" required />
             )}
           />
         </Grid>

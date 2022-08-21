@@ -1,13 +1,14 @@
-import { handlerPath } from '@libs/handler-resolver';
 import {
-  signUpSchema,
-  signInSchema,
-  groupSchema,
   accountCreateSchema,
+  accountDeleteSchema,
   accountUpdateSchema,
   groupCreateSchema,
-  accountDeleteSchema,
+  groupDeleteSchema,
+  groupUpdateSchema,
+  signInSchema,
+  signUpSchema,
 } from '@apiSchema';
+import { handlerPath } from '@libs/handler-resolver';
 
 export default {
   signUp: {
@@ -69,6 +70,22 @@ export default {
       },
     ],
   },
+  updateGroup: {
+    handler: `${handlerPath(__dirname)}/functions/group.updateGroup`,
+    events: [
+      {
+        http: {
+          method: 'put',
+          path: 'group',
+          request: {
+            schemas: {
+              'application/json': groupUpdateSchema,
+            },
+          },
+        },
+      },
+    ],
+  },
   deleteGroup: {
     handler: `${handlerPath(__dirname)}/functions/group.deleteGroup`,
     events: [
@@ -78,7 +95,7 @@ export default {
           path: 'group',
           request: {
             schemas: {
-              'application/json': groupSchema,
+              'application/json': groupDeleteSchema,
             },
           },
         },
