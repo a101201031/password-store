@@ -26,7 +26,7 @@ const createFunction: ValidatedEventAPIGatewayProxyEvent<
     .verifyIdToken(event.headers.Authorization.split(' ')[1]);
   const aid = cuid();
 
-  const accounts = await query({
+  const account = await query({
     sql: `SELECT A.service_account 
       FROM account A 
       INNER JOIN account_group AG 
@@ -37,7 +37,7 @@ const createFunction: ValidatedEventAPIGatewayProxyEvent<
         AND A.authentication = ?`,
     values: [uid, service_name, service_account, authentication],
   });
-  if (accounts[0]) {
+  if (account[0]) {
     throw new BadRequest('Account already in use');
   }
 
@@ -109,15 +109,15 @@ const updateFunction: ValidatedEventAPIGatewayProxyEvent<
       AccountModel,
       'aid' | 'gid' | 'service_account' | 'authentication' | 'password'
     > {}
-  const accounts: OriginAccountTypes[] = await query({
+  const account: OriginAccountTypes[] = await query({
     sql: 'SELECT A.aid, A.gid, A.service_account, A.authentication, A.password FROM account a INNER JOIN account_group AG ON AG.gid = A.gid AND AG.uid = ? WHERE A.aid = ?',
     values: [uid, aid],
   });
-  if (!accounts[0]) {
+  if (!account[0]) {
     throw new BadRequest('Account not found');
   }
 
-  const originAccount = accounts[0];
+  const originAccount = account[0];
 
   const modify: Partial<OriginAccountTypes> = {};
   if (gid && gid !== originAccount.gid) {

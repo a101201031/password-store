@@ -99,7 +99,6 @@ function AccountEdit() {
 
   const onSubmit: SubmitHandler<AccountEditFormTypes> = async (data) => {
     const { password, gid, authentication } = data;
-    console.log({ aid, password, gid, authentication });
     await fetcher.put<{ message: string }>({
       path: '/account',
       bodyParams: {
