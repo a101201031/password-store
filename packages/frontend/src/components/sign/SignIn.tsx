@@ -22,8 +22,8 @@ import { useState } from 'react';
 import { Controller, SubmitHandler, useForm } from 'react-hook-form';
 import type { Location } from 'react-router-dom';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { useRecoilState } from 'recoil';
-import { accessTokenAtom } from 'store';
+import { useResetRecoilState, useSetRecoilState } from 'recoil';
+import { accessTokenAtom, userInfoSltr } from 'store';
 
 type CustomLocationTypes = Omit<Location, 'state'> & {
   state?: { from?: { pathname: string } };
@@ -43,11 +43,12 @@ function SignIn() {
   const [alertState, setAlertState] = useState<AlertStateType>({
     open: false,
   });
-  let navigate = useNavigate();
-  let location = useLocation() as CustomLocationTypes;
+  const navigate = useNavigate();
+  const location = useLocation() as CustomLocationTypes;
   const from = location.state?.from?.pathname || '/';
 
-  const [accessToken, setAccessToken] = useRecoilState(accessTokenAtom);
+  const setAccessToken = useSetRecoilState(accessTokenAtom);
+  const resetUserInfo = useResetRecoilState(userInfoSltr);
 
   const onSubmit: SubmitHandler<SignInFormTypes> = async (data) => {
     const { email, password } = data;
@@ -58,6 +59,7 @@ function SignIn() {
       });
       localStorage.setItem('accessToken', token);
       setAccessToken(token);
+      resetUserInfo();
       navigate(from);
     } catch (e) {
       const err = e as Error | AxiosError<string>;

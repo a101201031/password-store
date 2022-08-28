@@ -1,12 +1,12 @@
 import { useEffect } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
-import { useRecoilState, useRecoilValue } from 'recoil';
+import { useSetRecoilState } from 'recoil';
 import { accessTokenAtom } from 'store';
 
 function SignOut() {
-  let location = useLocation();
+  const location = useLocation();
   localStorage.removeItem('accessToken');
-  const [accessToken, setAccessToken] = useRecoilState(accessTokenAtom);
+  const setAccessToken = useSetRecoilState(accessTokenAtom);
 
   useEffect(() => {
     setAccessToken(undefined);
