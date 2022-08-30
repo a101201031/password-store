@@ -10,3 +10,4 @@ export * from './ItemList';
 export * from './Main';
 export * from './Progress';
 export * from './sign';
+export * from './User';

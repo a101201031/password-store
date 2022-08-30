@@ -9,6 +9,7 @@ import {
   GroupBoard,
   GroupEdit,
   Main,
+  User,
 } from 'components';
 import { SignIn, SignUp } from 'components/sign';
 import { Route, Routes } from 'react-router-dom';
@@ -29,6 +30,7 @@ export const App = () => (
           <Route path="add" element={<GroupAdd />} />
           <Route path=":gid" element={<GroupEdit />} />
         </Route>
+        <Route path="/user" element={<User />} />
       </Route>
     </Route>
     <Route path="/signin" element={<SignIn />} />

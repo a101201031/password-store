@@ -7,6 +7,7 @@ import {
   groupUpdateSchema,
   signInSchema,
   signUpSchema,
+  userUpdateSchema,
 } from '@apiSchema';
 import { handlerPath } from '@libs/handler-resolver';
 
@@ -186,6 +187,22 @@ export default {
         http: {
           method: 'get',
           path: 'user',
+        },
+      },
+    ],
+  },
+  updateUser: {
+    handler: `${handlerPath(__dirname)}/functions/user.updateUser`,
+    events: [
+      {
+        http: {
+          method: 'post',
+          path: 'user',
+          request: {
+            schemas: {
+              'application/json': userUpdateSchema,
+            },
+          },
         },
       },
     ],

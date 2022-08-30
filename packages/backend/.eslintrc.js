@@ -22,5 +22,15 @@ module.exports = {
     'class-methods-use-this': 'off',
     'no-param-reassign': 'off',
     'no-underscore-dangle': 'off',
-  }
+    'import/extensions': [
+      'error',
+      'ignorePackages',
+      {
+        js: 'never',
+        jsx: 'never',
+        ts: 'never',
+        tsx: 'never',
+      },
+    ],
+  },
 };
