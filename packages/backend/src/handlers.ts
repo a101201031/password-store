@@ -206,6 +206,22 @@ export default {
       },
     ],
   },
+  readPassword: {
+    handler: `${handlerPath(__dirname)}/functions/password.readPassword`,
+    events: [
+      {
+        http: {
+          method: 'get',
+          path: 'password/{aid}',
+          request: {
+            schemas: {
+              'application/json': accountReadSchema,
+            },
+          },
+        },
+      },
+    ],
+  },
   tokenValidator: {
     handler: `${handlerPath(__dirname)}/functions/token.validator`,
     events: [

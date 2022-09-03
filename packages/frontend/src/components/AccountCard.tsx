@@ -1,9 +1,11 @@
 import {
+  Backdrop,
   Button,
   Card,
   CardActionArea,
   CardContent,
   CardMedia,
+  CircularProgress,
   Dialog,
   DialogActions,
   DialogContent,
@@ -11,8 +13,11 @@ import {
   Divider,
   Typography,
 } from '@mui/material';
-import { useState } from 'react';
+import { AuthAsyncBoundary } from 'components';
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { useRecoilValue, useSetRecoilState } from 'recoil';
+import { passwordSltr, snackbarAtom } from 'store';
 
 interface AccountCardProps {
   serviceName: string;
@@ -21,30 +26,86 @@ interface AccountCardProps {
 }
 
 function AccountCard(props: AccountCardProps) {
-  const { serviceName, serviceAccount } = props;
+  const { serviceName, serviceAccount, aid } = props;
   const [open, setOpen] = useState(false);
-  const handleClickOpen = () => {
+  const handleOpenClick = () => {
     setOpen(true);
   };
   const handleClose = () => {
     setOpen(false);
   };
-  const handleClickCopy = () => {
-    if (navigator.clipboard) {
-      navigator.clipboard
-        .writeText('password')
-        .then(() => {
-          alert('Copied to clipboard.');
-        })
-        .catch(() => {
-          alert('Failed to copy.');
-        });
-    }
+
+  const AccountDialog = () => {
+    const passwordInfo = useRecoilValue(passwordSltr({ aid }));
+    const setSnackbar = useSetRecoilState(snackbarAtom);
+    const [show, setShow] = useState(false);
+
+    const handleCopyClick = () => {
+      if (navigator.clipboard) {
+        navigator.clipboard
+          .writeText(passwordInfo.password)
+          .then(() => {
+            setSnackbar({
+              open: true,
+              level: 'success',
+              message: 'Copied to clipboard.',
+            });
+          })
+          .catch(() => {
+            setSnackbar({
+              open: true,
+              level: 'error',
+              message: 'Failed to copy.',
+            });
+          });
+      }
+    };
+
+    useEffect(() => {
+      setTimeout(() => {
+        setShow(false);
+      }, 5000);
+    }, [show]);
+
+    const handleShowClick = () => {
+      setShow(true);
+    };
+
+    return (
+      <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth={true}>
+        <DialogTitle>{serviceName} Account</DialogTitle>
+        <DialogContent dividers>
+          {passwordInfo.authentication !== 'standalone' && (
+            <Typography
+              gutterBottom
+            >{`Base Auth: ${passwordInfo.authentication}`}</Typography>
+          )}
+          <Typography gutterBottom>{`Account: ${serviceAccount}`}</Typography>
+          <Typography
+            gutterBottom
+            display="inline-block"
+          >{`Password: `}</Typography>
+          {show && (
+            <Typography gutterBottom display="inline-block">
+              {passwordInfo.password}
+            </Typography>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button autoFocus onClick={handleCopyClick}>
+            Copy
+          </Button>
+          <Button autoFocus onClick={handleShowClick}>
+            Show
+          </Button>
+        </DialogActions>
+      </Dialog>
+    );
   };
 
   return (
     <Card sx={{ maxWidth: 360 }}>
-      <CardActionArea onClick={handleClickOpen}>
+      <CardActionArea onClick={handleOpenClick}>
         <CardMedia
           component="img"
           height="120px"
@@ -60,18 +121,18 @@ function AccountCard(props: AccountCardProps) {
           </Typography>
         </CardContent>
       </CardActionArea>
-      <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth={true}>
-        <DialogTitle>{serviceName} Account</DialogTitle>
-        <DialogContent dividers>
-          <Typography gutterBottom>{serviceAccount}</Typography>
-          <Typography gutterBottom>Show Password</Typography>
-        </DialogContent>
-        <DialogActions>
-          <Button autoFocus onClick={handleClickCopy}>
-            Copy
-          </Button>
-        </DialogActions>
-      </Dialog>
+      <AuthAsyncBoundary
+        suspenseFallback={
+          <Backdrop
+            sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
+            open={open}
+          >
+            <CircularProgress />
+          </Backdrop>
+        }
+      >
+        {open && <AccountDialog />}
+      </AuthAsyncBoundary>
     </Card>
   );
 }

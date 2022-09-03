@@ -47,9 +47,6 @@ function AccountBoard() {
             </Grid>
             <Divider />
             <AuthAsyncBoundary
-              errorFallback={(_) => {
-                return null;
-              }}
               suspenseFallback={
                 <Grid
                   container
