@@ -230,8 +230,7 @@ function GroupEdit() {
 
   const handleDeleteClick: MouseEventHandler<HTMLButtonElement> = async () => {
     await fetcher.del({
-      path: '/group',
-      queryParams: { gid },
+      path: `/group/${gid}`,
       accessToken: idToken,
     });
     resetAccountList();

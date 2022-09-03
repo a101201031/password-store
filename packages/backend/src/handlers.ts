@@ -1,6 +1,7 @@
 import {
   accountCreateSchema,
   accountDeleteSchema,
+  accountReadSchema,
   accountUpdateSchema,
   groupCreateSchema,
   groupDeleteSchema,
@@ -93,7 +94,7 @@ export default {
       {
         http: {
           method: 'delete',
-          path: 'group',
+          path: 'group/{gid}',
           request: {
             schemas: {
               'application/json': groupDeleteSchema,
@@ -127,10 +128,8 @@ export default {
           method: 'get',
           path: 'account/{aid}',
           request: {
-            parameters: {
-              paths: {
-                aid: true,
-              },
+            schemas: {
+              'application/json': accountReadSchema,
             },
           },
         },
@@ -159,7 +158,7 @@ export default {
       {
         http: {
           method: 'delete',
-          path: 'account',
+          path: 'account/{aid}',
           request: {
             schemas: {
               'application/json': accountDeleteSchema,

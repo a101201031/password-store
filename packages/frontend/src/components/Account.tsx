@@ -149,8 +149,7 @@ function AccountEdit() {
 
   const handleDeleteClick: MouseEventHandler<HTMLButtonElement> = async () => {
     await fetcher.del({
-      path: '/account',
-      queryParams: { aid },
+      path: `/account/${aid}`,
       accessToken: idToken,
     });
     resetAccountList();

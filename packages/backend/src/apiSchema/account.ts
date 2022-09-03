@@ -15,6 +15,20 @@ export const accountCreateSchema = {
   },
 } as const;
 
+export const accountReadSchema = {
+  type: 'object',
+  properties: {
+    pathParameters: {
+      type: 'object',
+      properties: {
+        aid: { type: 'string' },
+      },
+      required: ['aid'],
+    },
+  },
+  required: ['pathParameters'],
+} as const;
+
 export const accountUpdateSchema = {
   type: 'object',
   properties: {
@@ -34,7 +48,7 @@ export const accountUpdateSchema = {
 export const accountDeleteSchema = {
   type: 'object',
   properties: {
-    queryStringParameters: {
+    pathParameters: {
       type: 'object',
       properties: {
         aid: { type: 'string' },
@@ -42,5 +56,5 @@ export const accountDeleteSchema = {
       required: ['aid'],
     },
   },
-  required: ['queryStringParameters'],
+  required: ['pathParameters'],
 } as const;

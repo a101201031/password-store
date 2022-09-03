@@ -2,6 +2,7 @@
 import {
   accountCreateSchema,
   accountDeleteSchema,
+  accountReadSchema,
   accountUpdateSchema,
 } from '@apiSchema';
 import type { ValidatedEventAPIGatewayProxyEvent } from '@libs/api-gateway';
@@ -179,7 +180,7 @@ const updateFunction: ValidatedEventAPIGatewayProxyEvent<
 const deleteFunction = async (
   event: APIGatewayProxyEvent,
 ): Promise<APIGatewayProxyResult> => {
-  const { aid } = event.queryStringParameters;
+  const { aid } = event.pathParameters;
   const { uid } = await firebaseAdmin
     .auth()
     .verifyIdToken(event.headers.Authorization.split(' ')[1]);
@@ -218,6 +219,7 @@ export const createAccount = authMiddyfy({
 
 export const readAccount = authMiddyfy({
   handler: readFunction,
+  inputSchema: accountReadSchema,
 });
 
 export const updateAccount = authMiddyfy({

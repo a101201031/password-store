@@ -208,7 +208,7 @@ const updateFunction: ValidatedEventAPIGatewayProxyEvent<
 const deleteFunction = async (
   event: APIGatewayProxyEvent,
 ): Promise<APIGatewayProxyResult> => {
-  const { gid } = event.queryStringParameters;
+  const { gid } = event.pathParameters;
   const { uid } = await firebaseAdmin
     .auth()
     .verifyIdToken(event.headers.Authorization.split(' ')[1]);

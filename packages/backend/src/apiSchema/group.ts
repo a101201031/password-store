@@ -36,7 +36,7 @@ export const groupUpdateSchema = {
 export const groupDeleteSchema = {
   type: 'object',
   properties: {
-    queryStringParameters: {
+    pathParameters: {
       type: 'object',
       properties: {
         gid: { type: 'string' },
@@ -44,5 +44,5 @@ export const groupDeleteSchema = {
       required: ['gid'],
     },
   },
-  required: ['queryStringParameters'],
+  required: ['pathParameters'],
 } as const;
