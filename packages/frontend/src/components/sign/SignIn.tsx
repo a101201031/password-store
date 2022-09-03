@@ -4,13 +4,11 @@ import {
   Avatar,
   Box,
   Button,
-  Checkbox,
   Collapse,
   CssBaseline,
-  FormControlLabel,
   Grid,
   IconButton,
-  Link,
+  Link as MuiLink,
   Paper,
   TextField,
   Typography,
@@ -21,7 +19,7 @@ import { fetcher } from 'helper';
 import { useState } from 'react';
 import { Controller, SubmitHandler, useForm } from 'react-hook-form';
 import type { Location } from 'react-router-dom';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate, Link } from 'react-router-dom';
 import { useResetRecoilState, useSetRecoilState } from 'recoil';
 import { accessTokenAtom, userInfoSltr } from 'store';
 
@@ -39,7 +37,13 @@ interface AlertStateType {
 }
 
 function SignIn() {
-  const { control, handleSubmit, resetField } = useForm<SignInFormTypes>();
+  const {
+    register,
+    control,
+    handleSubmit,
+    formState: { errors },
+    resetField,
+  } = useForm<SignInFormTypes>();
   const [alertState, setAlertState] = useState<AlertStateType>({
     open: false,
   });
@@ -100,8 +104,8 @@ function SignIn() {
             alignItems: 'center',
           }}
         >
-          <Avatar sx={{ m: 1, bgcolor: 'secondary.main' }}>
-            <p> icon </p>
+          <Avatar sx={{ m: 1, bgcolor: 'primary.main' }}>
+            <Typography>PS</Typography>
           </Avatar>
           <Typography component="h1" variant="h5">
             Sign in
@@ -137,14 +141,15 @@ function SignIn() {
               defaultValue=""
               render={({ field }) => (
                 <TextField
+                  {...register('email', { required: true })}
+                  {...field}
                   margin="normal"
-                  required
                   fullWidth
                   id="email"
                   label="Email Address"
                   autoComplete="email"
                   autoFocus
-                  {...field}
+                  error={!!errors.email}
                 />
               )}
             />
@@ -154,21 +159,17 @@ function SignIn() {
               defaultValue=""
               render={({ field }) => (
                 <TextField
+                  {...register('password', { required: true })}
+                  {...field}
                   margin="normal"
-                  required
                   fullWidth
                   label="Password"
                   type="password"
                   id="password"
                   autoComplete="current-password"
-                  {...field}
+                  error={!!errors.password}
                 />
               )}
-            />
-
-            <FormControlLabel
-              control={<Checkbox value="remember" color="primary" />}
-              label="Remember me"
             />
             <Button
               type="submit"
@@ -179,15 +180,10 @@ function SignIn() {
               Sign In
             </Button>
             <Grid container>
-              <Grid item xs>
-                <Link href="#" variant="body2">
-                  Forgot password?
-                </Link>
-              </Grid>
               <Grid item>
-                <Link href="/signup" variant="body2">
+                <MuiLink component={Link} to="/signup" variant="body2">
                   {"Don't have an account? Sign Up"}
-                </Link>
+                </MuiLink>
               </Grid>
             </Grid>
           </Box>

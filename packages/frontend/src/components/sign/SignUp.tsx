@@ -8,7 +8,7 @@ import {
   CssBaseline,
   FormControlLabel,
   Grid,
-  Link,
+  Link as MuiLink,
   TextField,
   Typography,
 } from '@mui/material';
@@ -17,8 +17,8 @@ import axios from 'axios';
 import { fetcher } from 'helper';
 import { Controller, SubmitHandler, useForm } from 'react-hook-form';
 import type { Location } from 'react-router-dom';
-import { useLocation, useNavigate } from 'react-router-dom';
-import { useRecoilState } from 'recoil';
+import { useLocation, useNavigate, Link } from 'react-router-dom';
+import { useSetRecoilState } from 'recoil';
 import { accessTokenAtom } from 'store';
 import { signUpSchema } from 'validation';
 
@@ -47,7 +47,7 @@ function SignUp() {
   let location = useLocation() as CustomLocationTypes;
   const from = location.state?.from?.pathname || '/';
 
-  const [token, setToken] = useRecoilState(accessTokenAtom);
+  const setToken = useSetRecoilState(accessTokenAtom);
 
   const onSubmit: SubmitHandler<SignUpFormTypes> = async (data) => {
     const { name, email, password } = data;
@@ -79,8 +79,8 @@ function SignUp() {
           alignItems: 'center',
         }}
       >
-        <Avatar sx={{ m: 1, bgcolor: 'secondary.main' }}>
-          <p> icon </p>
+        <Avatar sx={{ m: 1, bgcolor: 'primary.main' }}>
+          <Typography>PS</Typography>
         </Avatar>
         <Typography component="h1" variant="h5">
           Sign up
@@ -205,9 +205,9 @@ function SignUp() {
           </Button>
           <Grid container justifyContent="flex-end">
             <Grid item>
-              <Link href="/" variant="body2">
+              <MuiLink component={Link} to="/" variant="body2">
                 Already have an account? Sign in
-              </Link>
+              </MuiLink>
             </Grid>
           </Grid>
         </Box>
