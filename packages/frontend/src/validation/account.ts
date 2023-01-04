@@ -7,3 +7,14 @@ export const accountPasswordSchema = Yup.string()
   .matches(/(?=.*[a-z])/, 'At least one lowercase character.')
   .matches(/(?=.*[A-Z])/, 'At least one uppercase character.')
   .matches(/(?=.*?[#?!@ $%^&*-])/, 'At least one special character');
+
+export const accountAddFromSchema = Yup.object({
+  service_name: Yup.string().required(),
+  service_account: Yup.string().required(),
+  password: Yup.string().when('authentication', {
+    is: (authentication: string) => authentication === 'standalone',
+    then: Yup.string().required(),
+  }),
+  gid: Yup.string().required(),
+  authentication: Yup.string().required(),
+});

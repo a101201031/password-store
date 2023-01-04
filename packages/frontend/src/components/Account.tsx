@@ -1,3 +1,4 @@
+import { yupResolver } from '@hookform/resolvers/yup';
 import CancelIcon from '@mui/icons-material/Cancel';
 import DeleteIcon from '@mui/icons-material/Delete';
 import NavigateNextIcon from '@mui/icons-material/NavigateNext';
@@ -46,7 +47,7 @@ import {
   groupListSltr,
   snackbarAtom,
 } from 'store';
-import { accountPasswordSchema } from 'validation';
+import { accountAddFromSchema, accountPasswordSchema } from 'validation';
 
 function Account() {
   return (
@@ -483,7 +484,13 @@ function AccountAdd() {
   const resetAccountList = useResetRecoilState(accountListSltr);
   const resetGroupList = useResetRecoilState(groupListSltr);
 
-  const { control, handleSubmit } = useForm<AccountAddFormTypes>();
+  const {
+    control,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<AccountAddFormTypes>({
+    resolver: yupResolver(accountAddFromSchema),
+  });
   const [show, setShow] = useState(false);
   const [safetyScore, setSafetyScore] = useState<number>(0);
 
@@ -651,7 +658,9 @@ function AccountAdd() {
                   <li {...props}>{o.service_name}</li>
                 )}
                 freeSolo
-                renderInput={(params) => <TextField {...params} />}
+                renderInput={(params) => (
+                  <TextField error={!!errors.service_name} {...params} />
+                )}
               />
             )}
           />
@@ -670,6 +679,7 @@ function AccountAdd() {
                 fullWidth
                 id="service_account"
                 autoComplete="username"
+                error={!!errors.service_account}
                 {...field}
               />
             )}
@@ -706,6 +716,7 @@ function AccountAdd() {
                   onChange(e);
                   handlePasswordChange(e);
                 }}
+                error={!!errors.password}
                 {...field}
               />
             )}
@@ -727,7 +738,12 @@ function AccountAdd() {
             name="gid"
             defaultValue=""
             render={({ field }) => (
-              <Select {...field} fullWidth sx={{ mt: 2, mb: 1 }}>
+              <Select
+                error={!!errors.gid}
+                {...field}
+                fullWidth
+                sx={{ mt: 2, mb: 1 }}
+              >
                 {groupList.map((v) => (
                   <MenuItem key={v.gid} value={v.gid}>
                     {v.group_name}

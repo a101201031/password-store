@@ -20,12 +20,27 @@ const createFunction: ValidatedEventAPIGatewayProxyEvent<
   typeof accountCreateSchema.properties.body
 > = async (event) => {
   const { gid, service_name, service_account } = event.body;
+  if (!(gid && service_name && service_account)) {
+    throw new BadRequest('Misssing parameter.');
+  }
   const password = event.body?.password;
   const authentication = event.body?.authentication || 'standalone';
   const { uid } = await firebaseAdmin
     .auth()
     .verifyIdToken(event.headers.Authorization.split(' ')[1]);
   const aid = cuid();
+
+  const gidCheck = await query({
+    sql: `
+      SELECT AG.group_name
+      FROM account_group AG
+      WHERE AG.uid = ?
+        AND AG.gid = ?`,
+    values: [uid, gid],
+  });
+  if (!gidCheck[0]) {
+    throw new BadRequest('Account already in use');
+  }
 
   const account = await query({
     sql: `SELECT A.service_account 
