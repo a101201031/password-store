@@ -1,8 +1,8 @@
 import { fetcher } from 'helper';
 import type { UserModel } from 'model';
 import { selector } from 'recoil';
-import { accessTokenAtom } from './token';
 import { selectorTrigger } from 'store';
+import { accessTokenAtom } from './token';
 
 interface UserInfoTypes
   extends Pick<

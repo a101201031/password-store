@@ -1,21 +1,28 @@
-import KeyIcon from '@mui/icons-material/Key';
-import SaveIcon from '@mui/icons-material/Save';
+import { yupResolver } from '@hookform/resolvers/yup';
 import {
+  Box,
   Button,
   Container,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
   Divider,
   Grid,
   Paper,
   TextField,
   Typography,
 } from '@mui/material';
+import type { AxiosError } from 'axios';
+import axios from 'axios';
 import { AuthAsyncBoundary, CircularIndicator } from 'components';
 import { dateToString, fetcher, nowDiffDays } from 'helper';
-import type { UserModel } from 'model';
+import { useState } from 'react';
 import type { SubmitHandler } from 'react-hook-form';
 import { Controller, useForm } from 'react-hook-form';
-import { useRecoilValue, useResetRecoilState, useSetRecoilState } from 'recoil';
+import { useRecoilValue, useSetRecoilState } from 'recoil';
 import { accessTokenAtom, snackbarAtom, userInfoSltr } from 'store';
+import { changePasswordSchema } from 'validation';
 
 function User() {
   return (
@@ -53,88 +60,55 @@ function User() {
   );
 }
 
-interface UserProfileFormTypes extends Pick<UserModel, 'email' | 'user_name'> {}
-
 function UserProfile() {
   const userInfo = useRecoilValue(userInfoSltr);
-  const idToken = useRecoilValue(accessTokenAtom);
-  const setSnackbar = useSetRecoilState(snackbarAtom);
-  const resetUserInfo = useResetRecoilState(userInfoSltr);
-
-  const { control, handleSubmit } = useForm<UserProfileFormTypes>();
-
-  const onSubmit: SubmitHandler<UserProfileFormTypes> = async (data) => {
-    const { email, user_name } = data;
-    await fetcher.post({
-      path: '/user',
-      bodyParams: { email, user_name },
-      accessToken: idToken,
-    });
-    setSnackbar({
-      open: true,
-      level: 'success',
-      message: 'User has been modified successfully.',
-    });
-    resetUserInfo();
-  };
 
   return (
     <Grid
       rowSpacing={2}
       columnSpacing={{ sm: 2 }}
-      component="form"
-      onSubmit={handleSubmit(onSubmit)}
       container
       sx={{ p: 2 }}
+      alignItems="center"
     >
       <Grid item xs={12} sm={6}>
         <Typography variant="body1" sx={{ fontWeight: 'bold' }}>
           Email
         </Typography>
-        <Controller
-          name="email"
-          control={control}
-          defaultValue={userInfo.email}
-          render={({ field }) => (
-            <TextField {...field} margin="normal" fullWidth disabled />
-          )}
-        />
+        <Typography variant="body1">{userInfo.email}</Typography>
       </Grid>
-      <Grid item xs={12} sm={6}>
+      <Grid item sm={6} />
+      <Grid item xs={6}>
         <Typography variant="body1" sx={{ fontWeight: 'bold' }}>
           Name
         </Typography>
-        <Controller
-          name="user_name"
-          control={control}
-          defaultValue={userInfo.user_name}
-          render={({ field }) => (
-            <TextField {...field} margin="normal" fullWidth />
-          )}
-        />
+        <Typography variant="body1">{userInfo.user_name}</Typography>
       </Grid>
       <Grid item xs={12} sm={6}>
-        <Typography margin="normal" variant="body1" sx={{ fontWeight: 'bold' }}>
-          Two-factor Authentication
+        <Button sx={{ mt: 2, mb: 1 }} variant="contained">
+          edit
+        </Button>
+      </Grid>
+      <Grid item xs={12} sm={6}>
+        <Typography variant="body1" sx={{ fontWeight: 'bold' }}>
+          Created At
         </Typography>
-        <TextField
-          margin="normal"
-          fullWidth
-          defaultValue={userInfo.two_fact_auth_type || 'unused'}
-          disabled
-        />
+        <Typography variant="body1">
+          {dateToString(userInfo.created_at)}
+        </Typography>
+      </Grid>
+      <Grid item sm={12}>
+        <Divider />
       </Grid>
       <Grid item xs={12} sm={6}>
         <Typography margin="normal" variant="body1" sx={{ fontWeight: 'bold' }}>
           Change Password
         </Typography>
-        <Button
-          sx={{ mt: 2, mb: 1 }}
-          variant="contained"
-          startIcon={<KeyIcon />}
-        >
-          Change!
-        </Button>
+      </Grid>
+      <Grid item xs={12} sm={6}>
+        <AuthAsyncBoundary suspenseFallback={<></>}>
+          <UserPasswordChange />
+        </AuthAsyncBoundary>
       </Grid>
       <Grid item xs={12} sm={6}>
         <Typography variant="body1" sx={{ fontWeight: 'bold' }}>
@@ -150,40 +124,161 @@ function UserProfile() {
           {nowDiffDays(userInfo.last_password_changed)} days ago
         </Typography>
       </Grid>
-      <Grid item xs={12} sm={6}>
-        <Typography variant="body1" sx={{ fontWeight: 'bold' }}>
-          Created At
-        </Typography>
-        <Typography variant="body1">
-          {dateToString(userInfo.created_at)}
-        </Typography>
-      </Grid>
-
       <Grid item xs={12}>
-        <Grid container justifyContent="space-between">
-          <Grid item xs={6}>
-            <Grid container columnSpacing={{ xs: 1, sm: 2 }}>
-              <Grid item>
-                <Button
-                  variant="contained"
-                  type="submit"
-                  startIcon={<SaveIcon />}
-                >
-                  Save
-                </Button>
-              </Grid>
-            </Grid>
-          </Grid>
-          <Grid item xs={6}>
-            <Grid
-              container
-              justifyContent="end"
-              columnSpacing={{ xs: 1, sm: 2 }}
-            ></Grid>
-          </Grid>
-        </Grid>
+        <Divider />
+      </Grid>
+      <Grid item xs={12}>
+        <Button variant="outlined" color="error">
+          Delete account
+        </Button>
       </Grid>
     </Grid>
+  );
+}
+
+interface UserPasswordFormTypes {
+  currentPassword: string;
+  newPassword: string;
+  confirmPassword: string;
+}
+
+function UserPasswordChange() {
+  const {
+    register,
+    control,
+    handleSubmit,
+    reset,
+    setError,
+    formState: { errors },
+  } = useForm<UserPasswordFormTypes>({
+    resolver: yupResolver(changePasswordSchema),
+  });
+
+  const [passwordPopupOpen, setPasswordPopupOpen] = useState(false);
+  const idToken = useRecoilValue(accessTokenAtom);
+  const setSnackbar = useSetRecoilState(snackbarAtom);
+
+  const handleOpenClick = () => {
+    setPasswordPopupOpen(true);
+  };
+
+  const handleClose = () => {
+    setPasswordPopupOpen(false);
+  };
+
+  const onSubmit: SubmitHandler<UserPasswordFormTypes> = async (data) => {
+    const { currentPassword, newPassword, confirmPassword } = data;
+    try {
+      await fetcher.post({
+        path: '/user/password',
+        bodyParams: { currentPassword, newPassword, confirmPassword },
+        accessToken: idToken,
+      });
+      reset();
+      handleClose();
+      setSnackbar({
+        open: true,
+        level: 'success',
+        message: 'Password has been modified successfully.',
+      });
+    } catch (e) {
+      const err = e as Error | AxiosError<string>;
+      if (axios.isAxiosError(err) && err.response) {
+        const alertMsg =
+          (typeof err.response.data === 'string' && err.response.data) ||
+          'Unknown error.';
+        setError('currentPassword', { type: 'custom' });
+        setSnackbar({ open: true, level: 'error', message: alertMsg });
+      }
+    }
+  };
+
+  return (
+    <>
+      <Button variant="contained" onClick={handleOpenClick}>
+        Change Password
+      </Button>
+      <Dialog
+        open={passwordPopupOpen}
+        onClose={handleClose}
+        maxWidth="sm"
+        fullWidth={true}
+      >
+        <DialogTitle>Change password</DialogTitle>
+        <Box
+          component="form"
+          id="passwordForm"
+          noValidate
+          onSubmit={handleSubmit(onSubmit)}
+        >
+          <DialogContent dividers>
+            <Typography gutterBottom>{`Current password`}</Typography>
+            <Controller
+              name="currentPassword"
+              control={control}
+              defaultValue=""
+              render={({ field }) => (
+                <TextField
+                  {...register('currentPassword', { required: true })}
+                  {...field}
+                  margin="normal"
+                  fullWidth
+                  id="currentPassword"
+                  type="password"
+                  autoComplete="current-password"
+                  error={!!errors.currentPassword}
+                  helperText={errors.currentPassword?.message}
+                />
+              )}
+            />
+            <Typography gutterBottom>{`New password`}</Typography>
+            <Controller
+              name="newPassword"
+              control={control}
+              defaultValue=""
+              render={({ field }) => (
+                <TextField
+                  {...register('newPassword', { required: true })}
+                  {...field}
+                  margin="normal"
+                  fullWidth
+                  id="newPassword"
+                  type="password"
+                  autoComplete="new-password"
+                  error={!!errors.newPassword}
+                  helperText={errors.newPassword?.message}
+                />
+              )}
+            />
+            <Typography gutterBottom>{`Confirm password`}</Typography>
+            <Controller
+              name="confirmPassword"
+              control={control}
+              defaultValue=""
+              render={({ field }) => (
+                <TextField
+                  {...register('confirmPassword', { required: true })}
+                  {...field}
+                  margin="normal"
+                  fullWidth
+                  id="confirmPassword"
+                  type="password"
+                  autoComplete="new-password"
+                  error={!!errors.confirmPassword}
+                  helperText={errors.confirmPassword?.message}
+                />
+              )}
+            />
+          </DialogContent>
+        </Box>
+        <DialogActions>
+          <Button variant="contained" form="passwordForm" type="submit">
+            Save
+          </Button>
+          <Button onClick={handleClose}>Cancle</Button>
+        </DialogActions>
+      </Dialog>
+    </>
   );
 }
 
