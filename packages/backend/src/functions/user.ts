@@ -1,9 +1,19 @@
 /* eslint-disable camelcase */
-import { userPasswordUpdateSchema, userUpdateSchema } from '@apiSchema';
+import {
+  userDeleteSchema,
+  userPasswordUpdateSchema,
+  userUpdateSchema,
+} from '@apiSchema';
 import type { ValidatedEventAPIGatewayProxyEvent } from '@libs/api-gateway';
 import { formatJSONResponse } from '@libs/api-gateway';
 import { authMiddyfy } from '@libs/lambda';
 import type { AccountModel, UserModel } from '@model';
+import {
+  aesDecrypt,
+  aesEncrypt,
+  makeUserHash,
+  oneWayEncrypt,
+} from '@util/crypto';
 import '@util/firebase';
 import { firebaseAdmin } from '@util/firebaseAdmin';
 import { query, transaction } from '@util/mysql';
@@ -15,12 +25,6 @@ import {
   updatePassword,
 } from 'firebase/auth';
 import { BadRequest, InternalServerError } from 'http-errors';
-import {
-  makeUserHash,
-  oneWayEncrypt,
-  aesDecrypt,
-  aesEncrypt,
-} from '@util/crypto';
 
 const readFunction = async (
   event: APIGatewayProxyEvent,
@@ -80,6 +84,63 @@ const updateFunction: ValidatedEventAPIGatewayProxyEvent<
         values: [modify.user_name, uid],
       })
       .commit();
+  }
+
+  return formatJSONResponse({ message: 'success' });
+};
+
+const deleteFunction: ValidatedEventAPIGatewayProxyEvent<
+  typeof userDeleteSchema.properties.body
+> = async (event) => {
+  const { password } = event.body;
+  const { uid } = await firebaseAdmin
+    .auth()
+    .verifyIdToken(event.headers.Authorization.split(' ')[1]);
+
+  const selectEmailHash: Pick<UserModel, 'email'>[] = await query({
+    sql: `
+      SELECT
+        email, hash_key
+      FROM user
+      WHERE uid = ?`,
+    values: [uid],
+  });
+  const { email } = selectEmailHash[0];
+
+  const auth = getAuth();
+  try {
+    await signInWithEmailAndPassword(auth, email, password);
+  } catch (e) {
+    const err = e as FirebaseError;
+    if (err.code === 'auth/wrong-password') {
+      throw new BadRequest('Incorrect current password.');
+    } else {
+      throw new BadRequest('Unknown error.');
+    }
+  }
+
+  try {
+    await transaction()
+      .query({
+        sql: `
+          DELETE A, AG
+          FROM account A
+          INNER JOIN account_group AG
+          ON A.gid = AG.gid
+          WHERE AG.uid = ?`,
+        values: [uid],
+      })
+      .query({
+        sql: `
+          DELETE user
+          FROM user
+          WHERE uid = ?`,
+        values: [uid],
+      })
+      .commit();
+    await firebaseAdmin.auth().deleteUser(uid);
+  } catch (e) {
+    throw new InternalServerError();
   }
 
   return formatJSONResponse({ message: 'success' });
@@ -168,7 +229,6 @@ const updateUserPasswordFunction: ValidatedEventAPIGatewayProxyEvent<
 
     await updatePassword(auth.currentUser, newPassword);
   } catch (e) {
-    console.log(e);
     throw new InternalServerError();
   }
 
@@ -182,6 +242,11 @@ export const readUser = authMiddyfy({
 export const updateUser = authMiddyfy({
   handler: updateFunction,
   inputSchema: userUpdateSchema,
+});
+
+export const deleteUser = authMiddyfy({
+  handler: deleteFunction,
+  inputSchema: userDeleteSchema,
 });
 
 export const updateUserPassword = authMiddyfy({

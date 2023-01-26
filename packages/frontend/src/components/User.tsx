@@ -6,6 +6,7 @@ import {
   Dialog,
   DialogActions,
   DialogContent,
+  DialogContentText,
   DialogTitle,
   Divider,
   Grid,
@@ -13,9 +14,10 @@ import {
   TextField,
   Typography,
 } from '@mui/material';
+import DeleteIcon from '@mui/icons-material/Delete';
 import type { AxiosError } from 'axios';
 import axios from 'axios';
-import { AuthAsyncBoundary, CircularIndicator } from 'components';
+import { AuthAsyncBoundary, CircularIndicator, SignOut } from 'components';
 import { dateToString, fetcher, nowDiffDays } from 'helper';
 import { useState } from 'react';
 import type { SubmitHandler } from 'react-hook-form';
@@ -128,9 +130,9 @@ function UserProfile() {
         <Divider />
       </Grid>
       <Grid item xs={12}>
-        <Button variant="outlined" color="error">
-          Delete account
-        </Button>
+        <AuthAsyncBoundary suspenseFallback={<></>}>
+          <UserDelete />
+        </AuthAsyncBoundary>
       </Grid>
     </Grid>
   );
@@ -270,14 +272,136 @@ function UserPasswordChange() {
               )}
             />
           </DialogContent>
+          <DialogActions>
+            <Button variant="contained" type="submit">
+              Save
+            </Button>
+            <Button onClick={handleClose}>Cancle</Button>
+          </DialogActions>
         </Box>
-        <DialogActions>
-          <Button variant="contained" form="passwordForm" type="submit">
-            Save
-          </Button>
-          <Button onClick={handleClose}>Cancle</Button>
-        </DialogActions>
       </Dialog>
+    </>
+  );
+}
+
+interface UserDeleteFormTypes {
+  password: string;
+}
+
+function UserDelete() {
+  const {
+    register,
+    control,
+    handleSubmit,
+    setError,
+    formState: { errors },
+  } = useForm<UserDeleteFormTypes>();
+
+  const [deletePopupOpen, setDeletePopupOpen] = useState(false);
+  const [isDeleted, setIsDeleted] = useState(false);
+  const idToken = useRecoilValue(accessTokenAtom);
+  const setSnackbar = useSetRecoilState(snackbarAtom);
+
+  const handleOpenClick = () => {
+    setDeletePopupOpen(true);
+  };
+
+  const handleClose = () => {
+    setDeletePopupOpen(false);
+  };
+
+  const onSubmit: SubmitHandler<UserDeleteFormTypes> = async (data) => {
+    const { password } = data;
+    try {
+      await fetcher.post({
+        path: '/user/delete',
+        bodyParams: { password },
+        accessToken: idToken,
+      });
+      handleClose();
+      setIsDeleted(true);
+    } catch (e) {
+      const err = e as Error | AxiosError<string>;
+      if (axios.isAxiosError(err) && err.response) {
+        const alertMsg =
+          (typeof err.response.data === 'string' && err.response.data) ||
+          'Unknown error.';
+        setError('password', { type: 'custom' });
+        setSnackbar({ open: true, level: 'error', message: alertMsg });
+      }
+    }
+  };
+
+  return (
+    <>
+      <Button
+        variant="outlined"
+        startIcon={<DeleteIcon />}
+        color="error"
+        onClick={handleOpenClick}
+      >
+        Delete User
+      </Button>
+      <Dialog
+        open={deletePopupOpen}
+        onClose={handleClose}
+        maxWidth="sm"
+        fullWidth={true}
+      >
+        <Box
+          component="form"
+          id="deleteForm"
+          noValidate
+          onSubmit={handleSubmit(onSubmit)}
+        >
+          <DialogTitle>{`Delete User`}</DialogTitle>
+          <DialogContent dividers>
+            <DialogContentText>
+              Are you sure that you want to delete user? This user will be
+              deleted immediately. You can't undo this action.
+            </DialogContentText>
+            <Typography color="error" sx={{ fontWeight: 'bold' }}>
+              Warning: Your management accounts will deleted immediately. Please
+              backup your management accounts password.
+            </Typography>
+          </DialogContent>
+          <DialogContent dividers>
+            <Typography gutterBottom>{`Password`}</Typography>
+            <Controller
+              name="password"
+              control={control}
+              defaultValue=""
+              render={({ field }) => (
+                <TextField
+                  {...register('password', { required: true })}
+                  {...field}
+                  margin="normal"
+                  fullWidth
+                  id="password"
+                  type="password"
+                  autoComplete="password"
+                  error={!!errors.password}
+                  helperText={errors.password?.message}
+                />
+              )}
+            />
+          </DialogContent>
+          <DialogActions>
+            <Button autoFocus onClick={handleClose}>
+              Cancle
+            </Button>
+            <Button
+              startIcon={<DeleteIcon />}
+              variant="contained"
+              color="error"
+              type="submit"
+            >
+              Delete
+            </Button>
+          </DialogActions>
+        </Box>
+      </Dialog>
+      {isDeleted && <SignOut />}
     </>
   );
 }

@@ -8,6 +8,7 @@ import {
   groupUpdateSchema,
   signInSchema,
   signUpSchema,
+  userDeleteSchema,
   userPasswordUpdateSchema,
   userUpdateSchema,
 } from '@apiSchema';
@@ -201,6 +202,22 @@ export default {
           request: {
             schemas: {
               'application/json': userUpdateSchema,
+            },
+          },
+        },
+      },
+    ],
+  },
+  deleteUser: {
+    handler: `${handlerPath(__dirname)}/functions/user.deleteUser`,
+    events: [
+      {
+        http: {
+          method: 'post',
+          path: 'user/delete',
+          request: {
+            schemas: {
+              'application/json': userDeleteSchema,
             },
           },
         },

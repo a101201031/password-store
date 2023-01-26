@@ -12,6 +12,19 @@ export const userUpdateSchema = {
   },
 } as const;
 
+export const userDeleteSchema = {
+  type: 'object',
+  properties: {
+    body: {
+      type: 'object',
+      properties: {
+        password: { type: 'string' },
+      },
+      required: ['password'],
+    },
+  },
+} as const;
+
 export const userPasswordUpdateSchema = {
   type: 'object',
   properties: {
