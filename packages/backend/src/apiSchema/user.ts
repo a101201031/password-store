@@ -4,10 +4,9 @@ export const userUpdateSchema = {
     body: {
       type: 'object',
       properties: {
-        email: { type: 'string' },
         user_name: { type: 'string' },
       },
-      required: ['email'],
+      required: ['user_name'],
     },
   },
 } as const;

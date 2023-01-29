@@ -198,7 +198,7 @@ export default {
       {
         http: {
           method: 'post',
-          path: 'user',
+          path: 'user/update',
           request: {
             schemas: {
               'application/json': userUpdateSchema,

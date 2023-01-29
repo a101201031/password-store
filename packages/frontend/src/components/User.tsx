@@ -1,4 +1,5 @@
 import { yupResolver } from '@hookform/resolvers/yup';
+import DeleteIcon from '@mui/icons-material/Delete';
 import {
   Box,
   Button,
@@ -14,7 +15,6 @@ import {
   TextField,
   Typography,
 } from '@mui/material';
-import DeleteIcon from '@mui/icons-material/Delete';
 import type { AxiosError } from 'axios';
 import axios from 'axios';
 import { AuthAsyncBoundary, CircularIndicator, SignOut } from 'components';
@@ -22,9 +22,9 @@ import { dateToString, fetcher, nowDiffDays } from 'helper';
 import { useState } from 'react';
 import type { SubmitHandler } from 'react-hook-form';
 import { Controller, useForm } from 'react-hook-form';
-import { useRecoilValue, useSetRecoilState } from 'recoil';
+import { useRecoilValue, useResetRecoilState, useSetRecoilState } from 'recoil';
 import { accessTokenAtom, snackbarAtom, userInfoSltr } from 'store';
-import { changePasswordSchema } from 'validation';
+import { changePasswordSchema, changeUserNameSchema } from 'validation';
 
 function User() {
   return (
@@ -87,9 +87,9 @@ function UserProfile() {
         <Typography variant="body1">{userInfo.user_name}</Typography>
       </Grid>
       <Grid item xs={12} sm={6}>
-        <Button sx={{ mt: 2, mb: 1 }} variant="contained">
-          edit
-        </Button>
+        <AuthAsyncBoundary suspenseFallback={<></>}>
+          <UserNameEdit />
+        </AuthAsyncBoundary>
       </Grid>
       <Grid item xs={12} sm={6}>
         <Typography variant="body1" sx={{ fontWeight: 'bold' }}>
@@ -135,6 +135,113 @@ function UserProfile() {
         </AuthAsyncBoundary>
       </Grid>
     </Grid>
+  );
+}
+
+interface UserNameFormTypes {
+  userName: string;
+}
+
+function UserNameEdit() {
+  const {
+    register,
+    control,
+    handleSubmit,
+    reset,
+    formState: { errors },
+  } = useForm<UserNameFormTypes>({
+    resolver: yupResolver(changeUserNameSchema),
+  });
+  const [namePopupOpen, setNamePopupOpen] = useState(false);
+  const idToken = useRecoilValue(accessTokenAtom);
+  const setSnackbar = useSetRecoilState(snackbarAtom);
+  const resetUserInfo = useResetRecoilState(userInfoSltr);
+
+  const handleOpenClick = () => {
+    setNamePopupOpen(true);
+  };
+
+  const handleClose = () => {
+    setNamePopupOpen(false);
+  };
+
+  const onSubmit: SubmitHandler<UserNameFormTypes> = async (data) => {
+    const { userName: user_name } = data;
+    try {
+      await fetcher.post({
+        path: '/user/update',
+        bodyParams: { user_name },
+        accessToken: idToken,
+      });
+      reset();
+      setNamePopupOpen(false);
+      handleClose();
+      resetUserInfo();
+    } catch (e) {
+      const err = e as Error | AxiosError<string>;
+      if (axios.isAxiosError(err) && err.response) {
+        const alertMsg =
+          (typeof err.response.data === 'string' && err.response.data) ||
+          'Unknown error.';
+        setSnackbar({ open: true, level: 'error', message: alertMsg });
+      }
+    }
+  };
+
+  return (
+    <>
+      <Button
+        variant="outlined"
+        onClick={handleOpenClick}
+        sx={{ mt: 2, mb: 1 }}
+      >
+        Edit
+      </Button>
+      {namePopupOpen && (
+        <Dialog
+          open={namePopupOpen}
+          onClose={handleClose}
+          maxWidth="sm"
+          fullWidth={true}
+        >
+          <Box
+            component="form"
+            id="deleteForm"
+            noValidate
+            onSubmit={handleSubmit(onSubmit)}
+          >
+            <DialogTitle>{`Edit User Name`}</DialogTitle>
+            <DialogContent dividers>
+              <Typography gutterBottom>{`Name`}</Typography>
+              <Controller
+                name="userName"
+                control={control}
+                defaultValue=""
+                render={({ field }) => (
+                  <TextField
+                    {...register('userName', { required: true })}
+                    {...field}
+                    margin="normal"
+                    fullWidth
+                    id="userName"
+                    type="text"
+                    autoComplete="userName"
+                    error={!!errors.userName}
+                    helperText={errors.userName?.message}
+                  />
+                )}
+              />
+            </DialogContent>
+            <DialogActions>
+              <Button variant="contained" type="submit">
+                Save
+              </Button>
+              <Button onClick={handleClose}>Cancle</Button>
+            </DialogActions>
+          </Box>
+        </Dialog>
+      )}
+    </>
   );
 }
 

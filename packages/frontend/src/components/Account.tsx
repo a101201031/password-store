@@ -47,7 +47,7 @@ import {
   groupListSltr,
   snackbarAtom,
 } from 'store';
-import { accountAddFromSchema, accountPasswordSchema } from 'validation';
+import { accountAddFormSchema, accountPasswordSchema } from 'validation';
 
 function Account() {
   return (
@@ -489,7 +489,7 @@ function AccountAdd() {
     handleSubmit,
     formState: { errors },
   } = useForm<AccountAddFormTypes>({
-    resolver: yupResolver(accountAddFromSchema),
+    resolver: yupResolver(accountAddFormSchema),
   });
   const [show, setShow] = useState(false);
   const [safetyScore, setSafetyScore] = useState<number>(0);

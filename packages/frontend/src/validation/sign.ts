@@ -1,7 +1,8 @@
 import * as Yup from 'yup';
+import { userNameSchema } from './user';
 
 export const signUpSchema = Yup.object({
-  name: Yup.string().required(),
+  name: userNameSchema,
   email: Yup.string().required().email(),
   password: Yup.string()
     .required()
