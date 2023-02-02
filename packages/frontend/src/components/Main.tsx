@@ -1,9 +1,7 @@
 import AccountCircleIcon from '@mui/icons-material/AccountCircle';
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
 import MenuIcon from '@mui/icons-material/Menu';
-import NotificationsIcon from '@mui/icons-material/Notifications';
 import {
-  Badge,
   Box,
   CssBaseline,
   Divider,
@@ -119,11 +117,6 @@ function Main() {
           >
             Password Store
           </Typography>
-          <IconButton color="secondary">
-            <Badge badgeContent={4} color="success">
-              <NotificationsIcon />
-            </Badge>
-          </IconButton>
           <UserMenu />
         </Toolbar>
       </AppBar>

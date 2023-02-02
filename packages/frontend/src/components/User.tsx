@@ -174,7 +174,6 @@ function UserNameEdit() {
         accessToken: idToken,
       });
       reset();
-      setNamePopupOpen(false);
       handleClose();
       resetUserInfo();
     } catch (e) {
@@ -264,8 +263,10 @@ function UserPasswordChange() {
   });
 
   const [passwordPopupOpen, setPasswordPopupOpen] = useState(false);
+  const [isSubmit, setIsSubmit] = useState(false);
   const idToken = useRecoilValue(accessTokenAtom);
   const setSnackbar = useSetRecoilState(snackbarAtom);
+  const resetUserInfo = useResetRecoilState(userInfoSltr);
 
   const handleOpenClick = () => {
     setPasswordPopupOpen(true);
@@ -277,6 +278,7 @@ function UserPasswordChange() {
 
   const onSubmit: SubmitHandler<UserPasswordFormTypes> = async (data) => {
     const { currentPassword, newPassword, confirmPassword } = data;
+    setIsSubmit(true);
     try {
       await fetcher.post({
         path: '/user/password',
@@ -290,7 +292,10 @@ function UserPasswordChange() {
         level: 'success',
         message: 'Password has been modified successfully.',
       });
+      resetUserInfo();
+      setIsSubmit(false);
     } catch (e) {
+      setIsSubmit(false);
       const err = e as Error | AxiosError<string>;
       if (axios.isAxiosError(err) && err.response) {
         const alertMsg =
@@ -307,86 +312,88 @@ function UserPasswordChange() {
       <Button variant="contained" onClick={handleOpenClick}>
         Change Password
       </Button>
-      <Dialog
-        open={passwordPopupOpen}
-        onClose={handleClose}
-        maxWidth="sm"
-        fullWidth={true}
-      >
-        <DialogTitle>Change password</DialogTitle>
-        <Box
-          component="form"
-          id="passwordForm"
-          noValidate
-          onSubmit={handleSubmit(onSubmit)}
+      {passwordPopupOpen && (
+        <Dialog
+          open={passwordPopupOpen}
+          onClose={handleClose}
+          maxWidth="sm"
+          fullWidth={true}
         >
-          <DialogContent dividers>
-            <Typography gutterBottom>{`Current password`}</Typography>
-            <Controller
-              name="currentPassword"
-              control={control}
-              defaultValue=""
-              render={({ field }) => (
-                <TextField
-                  {...register('currentPassword', { required: true })}
-                  {...field}
-                  margin="normal"
-                  fullWidth
-                  id="currentPassword"
-                  type="password"
-                  autoComplete="current-password"
-                  error={!!errors.currentPassword}
-                  helperText={errors.currentPassword?.message}
-                />
-              )}
-            />
-            <Typography gutterBottom>{`New password`}</Typography>
-            <Controller
-              name="newPassword"
-              control={control}
-              defaultValue=""
-              render={({ field }) => (
-                <TextField
-                  {...register('newPassword', { required: true })}
-                  {...field}
-                  margin="normal"
-                  fullWidth
-                  id="newPassword"
-                  type="password"
-                  autoComplete="new-password"
-                  error={!!errors.newPassword}
-                  helperText={errors.newPassword?.message}
-                />
-              )}
-            />
-            <Typography gutterBottom>{`Confirm password`}</Typography>
-            <Controller
-              name="confirmPassword"
-              control={control}
-              defaultValue=""
-              render={({ field }) => (
-                <TextField
-                  {...register('confirmPassword', { required: true })}
-                  {...field}
-                  margin="normal"
-                  fullWidth
-                  id="confirmPassword"
-                  type="password"
-                  autoComplete="new-password"
-                  error={!!errors.confirmPassword}
-                  helperText={errors.confirmPassword?.message}
-                />
-              )}
-            />
-          </DialogContent>
-          <DialogActions>
-            <Button variant="contained" type="submit">
-              Save
-            </Button>
-            <Button onClick={handleClose}>Cancle</Button>
-          </DialogActions>
-        </Box>
-      </Dialog>
+          <DialogTitle>Change password</DialogTitle>
+          <Box
+            component="form"
+            id="passwordForm"
+            noValidate
+            onSubmit={handleSubmit(onSubmit)}
+          >
+            <DialogContent dividers>
+              <Typography gutterBottom>{`Current password`}</Typography>
+              <Controller
+                name="currentPassword"
+                control={control}
+                defaultValue=""
+                render={({ field }) => (
+                  <TextField
+                    {...register('currentPassword', { required: true })}
+                    {...field}
+                    margin="normal"
+                    fullWidth
+                    id="currentPassword"
+                    type="password"
+                    autoComplete="current-password"
+                    error={!!errors.currentPassword}
+                    helperText={errors.currentPassword?.message}
+                  />
+                )}
+              />
+              <Typography gutterBottom>{`New password`}</Typography>
+              <Controller
+                name="newPassword"
+                control={control}
+                defaultValue=""
+                render={({ field }) => (
+                  <TextField
+                    {...register('newPassword', { required: true })}
+                    {...field}
+                    margin="normal"
+                    fullWidth
+                    id="newPassword"
+                    type="password"
+                    autoComplete="new-password"
+                    error={!!errors.newPassword}
+                    helperText={errors.newPassword?.message}
+                  />
+                )}
+              />
+              <Typography gutterBottom>{`Confirm password`}</Typography>
+              <Controller
+                name="confirmPassword"
+                control={control}
+                defaultValue=""
+                render={({ field }) => (
+                  <TextField
+                    {...register('confirmPassword', { required: true })}
+                    {...field}
+                    margin="normal"
+                    fullWidth
+                    id="confirmPassword"
+                    type="password"
+                    autoComplete="new-password"
+                    error={!!errors.confirmPassword}
+                    helperText={errors.confirmPassword?.message}
+                  />
+                )}
+              />
+            </DialogContent>
+            <DialogActions>
+              <Button variant="contained" type="submit" disabled={isSubmit}>
+                Save
+              </Button>
+              <Button onClick={handleClose}>Cancle</Button>
+            </DialogActions>
+          </Box>
+        </Dialog>
+      )}
     </>
   );
 }

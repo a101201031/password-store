@@ -212,9 +212,12 @@ function AccountEdit() {
           container
           sx={{
             height: '100%',
-            background:
-              'linear-gradient(to bottom, rgba(20, 20, 20, 0.1), rgba(20, 20, 20, 0.25), rgba(20, 20, 20, 0.5)), url(/logo/google_logo.jpeg)',
-            backgroundSize: 'cover',
+            background: `linear-gradient(to bottom, rgba(20, 20, 20, 0.1), rgba(20, 20, 20, 0.25), rgba(20, 20, 20, 0.5)), url(${
+              SERVICES.find((v) => v.service_name === accountInfo.service_name)
+                ?.logo || '/logo/default_logo.png'
+            })`,
+            backgroundSize: 'contain',
+            backgroundRepeat: 'no-repeat',
             backgroundPosition: 'center',
           }}
         >
@@ -497,6 +500,7 @@ function AccountAdd() {
   const navigate = useNavigate();
 
   const onSubmit: SubmitHandler<AccountAddFormTypes> = async (data) => {
+    console.log(data);
     const { service_name, service_account, password, gid, authentication } =
       data;
     await fetcher.post<{ message: string }>({
@@ -760,7 +764,7 @@ function AccountAdd() {
           <Controller
             control={control}
             name="authentication"
-            defaultValue=""
+            defaultValue="standalone"
             render={({ field: { ref, onChange, ...field } }) => (
               <Autocomplete
                 sx={{ mt: 2, mb: 1 }}

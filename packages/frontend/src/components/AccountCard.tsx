@@ -14,6 +14,7 @@ import {
   Typography,
 } from '@mui/material';
 import { AuthAsyncBoundary } from 'components';
+import { SERVICES } from 'constants/SERVICES';
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useRecoilValue, useSetRecoilState } from 'recoil';
@@ -109,7 +110,11 @@ function AccountCard(props: AccountCardProps) {
         <CardMedia
           component="img"
           height="120px"
-          image="/logo/google_logo.jpeg"
+          sx={{ p: '1rem 1rem 0 1rem', objectFit: 'contain' }}
+          image={
+            SERVICES.find((v) => v.service_name === serviceName)?.logo ||
+            '/logo/default_logo.png'
+          }
         />
         <CardContent>
           <Divider />
@@ -146,7 +151,11 @@ function AccountEditCard(props: AccountCardProps) {
         <CardMedia
           component="img"
           height="120px"
-          image="/logo/google_logo.jpeg"
+          sx={{ p: '1rem 1rem 0 1rem', objectFit: 'contain' }}
+          image={
+            SERVICES.find((v) => v.service_name === serviceName)?.logo ||
+            '/logo/default_logo.png'
+          }
         />
         <CardContent>
           <Divider />

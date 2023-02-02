@@ -92,7 +92,7 @@ function GroupBoard() {
                     variant="outlined"
                     startIcon={<AddIcon />}
                   >
-                    Add Account
+                    Add Group
                   </Button>
                 </Grid>
                 <Grid item>
