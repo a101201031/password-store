@@ -143,8 +143,8 @@ export default {
     events: [
       {
         http: {
-          method: 'put',
-          path: 'account',
+          method: 'post',
+          path: 'account/update',
           request: {
             schemas: {
               'application/json': accountUpdateSchema,
