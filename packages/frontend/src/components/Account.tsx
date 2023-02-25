@@ -500,7 +500,6 @@ function AccountAdd() {
   const navigate = useNavigate();
 
   const onSubmit: SubmitHandler<AccountAddFormTypes> = async (data) => {
-    console.log(data);
     const { service_name, service_account, password, gid, authentication } =
       data;
     await fetcher.post<{ message: string }>({

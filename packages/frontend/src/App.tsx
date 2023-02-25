@@ -12,7 +12,7 @@ import {
   User,
 } from 'components';
 import { SignIn, SignUp } from 'components/sign';
-import { Route, Routes } from 'react-router-dom';
+import { Route, Routes, redirect } from 'react-router-dom';
 import { ProtectedRoute } from 'router';
 
 export const App = () => (
@@ -32,8 +32,16 @@ export const App = () => (
         </Route>
         <Route path="/user" element={<User />} />
       </Route>
+      <Route
+        path="/*"
+        element
+        loader={() => {
+          redirect('/');
+        }}
+      />
     </Route>
     <Route path="/signin" element={<SignIn />} />
     <Route path="/signup" element={<SignUp />} />
+    <Route path="/*" element loader={() => redirect('/signup')} />
   </Routes>
 );
