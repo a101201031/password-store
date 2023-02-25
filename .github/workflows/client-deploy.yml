@@ -25,9 +25,6 @@ jobs:
         run: yarn
 
       - name: Build dependencies
-        run: yarn build
-
-      - name: Create TypeDoc
         working-directory: './packages/frontend'
         run: yarn build
 
