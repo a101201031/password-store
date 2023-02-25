@@ -24,6 +24,10 @@ jobs:
       - name: Install dependencies
         run: yarn
 
+      - name: Install dependencies in frontend
+        working-directory: './packages/frontend'
+        run: yarn
+
       - name: Build dependencies
         working-directory: './packages/frontend'
         run: yarn build
