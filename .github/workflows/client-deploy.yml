@@ -1,0 +1,40 @@
+name: frontend-deploy
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'packages/frontend/**'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions: write-all
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Use Node.js
+        uses: actions/setup-node@v1
+        with:
+          always-auth: true
+          node-version: '16.x'
+
+      - name: Install dependencies
+        run: yarn
+
+      - name: Build dependencies
+        run: yarn build
+
+      - name: Create TypeDoc
+        working-directory: './packages/frontend'
+        run: yarn build
+
+      - name: Deploy 
+        working-directory: './packages/frontend'
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        run: |
+          aws s3 sync ./build s3://password-store-frontend-prod --exclude \"*.map\"
