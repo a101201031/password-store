@@ -12,7 +12,7 @@ import {
   User,
 } from 'components';
 import { SignIn, SignUp } from 'components/sign';
-import { Route, Routes, redirect } from 'react-router-dom';
+import { Route, Routes, Navigate } from 'react-router-dom';
 import { ProtectedRoute } from 'router';
 
 export const App = () => (
@@ -31,17 +31,10 @@ export const App = () => (
           <Route path=":gid" element={<GroupEdit />} />
         </Route>
         <Route path="/user" element={<User />} />
+        <Route path="*" element={<Navigate to="/" replace={true} />} />
       </Route>
-      <Route
-        path="/*"
-        element
-        loader={() => {
-          redirect('/');
-        }}
-      />
     </Route>
-    <Route path="/signin" element={<SignIn />} />
-    <Route path="/signup" element={<SignUp />} />
-    <Route path="/*" element loader={() => redirect('/signup')} />
+    <Route path="/sign-in" element={<SignIn />} />
+    <Route path="/sign-up" element={<SignUp />} />
   </Routes>
 );

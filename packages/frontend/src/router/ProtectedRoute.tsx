@@ -3,17 +3,17 @@ import { useRecoilValue } from 'recoil';
 import { accessTokenAtom } from 'store';
 
 interface ProtectedRouteProps {
-  redirectPath?: string;
+  to?: string;
 }
 
-function ProtectedRoute({ redirectPath = '/signin' }: ProtectedRouteProps) {
+function ProtectedRoute({ to = '/sign-in' }: ProtectedRouteProps) {
   let location = useLocation();
   const accessToken = useRecoilValue(accessTokenAtom);
 
   return accessToken ? (
     <Outlet />
   ) : (
-    <Navigate to={redirectPath} state={{ from: location }} replace />
+    <Navigate to={to} state={{ from: location }} replace />
   );
 }
 
