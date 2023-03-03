@@ -1,12 +1,8 @@
 import {
   accountCreateSchema,
-  accountDeleteSchema,
-  accountReadSchema,
   accountUpdateSchema,
   groupCreateSchema,
-  groupDeleteSchema,
   groupUpdateSchema,
-  signInSchema,
   signUpSchema,
   userDeleteSchema,
   userPasswordUpdateSchema,
@@ -15,6 +11,18 @@ import {
 import { handlerPath } from '@libs/handler-resolver';
 
 export default {
+  hello: {
+    handler: `${handlerPath(__dirname)}/functions/hello.hello`,
+    events: [
+      {
+        http: {
+          method: 'get',
+          path: 'hello',
+          cors: true,
+        },
+      },
+    ],
+  },
   signUp: {
     handler: `${handlerPath(__dirname)}/functions/signUp.signUp`,
     events: [
@@ -22,6 +30,7 @@ export default {
         http: {
           method: 'post',
           path: 'sign-up',
+          cors: true,
           request: {
             schemas: {
               'application/json': signUpSchema,
@@ -38,11 +47,7 @@ export default {
         http: {
           method: 'post',
           path: 'sign-in',
-          request: {
-            schemas: {
-              'application/json': signInSchema,
-            },
-          },
+          cors: true,
         },
       },
     ],
@@ -54,6 +59,7 @@ export default {
         http: {
           method: 'post',
           path: 'group',
+          cors: true,
           request: {
             schemas: {
               'application/json': groupCreateSchema,
@@ -70,6 +76,7 @@ export default {
         http: {
           method: 'get',
           path: 'group',
+          cors: true,
         },
       },
     ],
@@ -81,6 +88,7 @@ export default {
         http: {
           method: 'put',
           path: 'group',
+          cors: true,
           request: {
             schemas: {
               'application/json': groupUpdateSchema,
@@ -97,11 +105,7 @@ export default {
         http: {
           method: 'delete',
           path: 'group/{gid}',
-          request: {
-            schemas: {
-              'application/json': groupDeleteSchema,
-            },
-          },
+          cors: true,
         },
       },
     ],
@@ -113,6 +117,7 @@ export default {
         http: {
           method: 'post',
           path: 'account',
+          cors: true,
           request: {
             schemas: {
               'application/json': accountCreateSchema,
@@ -129,11 +134,7 @@ export default {
         http: {
           method: 'get',
           path: 'account/{aid}',
-          request: {
-            schemas: {
-              'application/json': accountReadSchema,
-            },
-          },
+          cors: true,
         },
       },
     ],
@@ -145,6 +146,7 @@ export default {
         http: {
           method: 'post',
           path: 'account/update',
+          cors: true,
           request: {
             schemas: {
               'application/json': accountUpdateSchema,
@@ -161,11 +163,7 @@ export default {
         http: {
           method: 'delete',
           path: 'account/{aid}',
-          request: {
-            schemas: {
-              'application/json': accountDeleteSchema,
-            },
-          },
+          cors: true,
         },
       },
     ],
@@ -177,6 +175,7 @@ export default {
         http: {
           method: 'get',
           path: 'accounts',
+          cors: true,
         },
       },
     ],
@@ -188,6 +187,7 @@ export default {
         http: {
           method: 'get',
           path: 'user',
+          cors: true,
         },
       },
     ],
@@ -199,6 +199,7 @@ export default {
         http: {
           method: 'post',
           path: 'user/update',
+          cors: true,
           request: {
             schemas: {
               'application/json': userUpdateSchema,
@@ -215,6 +216,7 @@ export default {
         http: {
           method: 'post',
           path: 'user/delete',
+          cors: true,
           request: {
             schemas: {
               'application/json': userDeleteSchema,
@@ -231,6 +233,7 @@ export default {
         http: {
           method: 'post',
           path: 'user/password',
+          cors: true,
           request: {
             schemas: {
               'application/json': userPasswordUpdateSchema,
@@ -247,11 +250,7 @@ export default {
         http: {
           method: 'get',
           path: 'password/{aid}',
-          request: {
-            schemas: {
-              'application/json': accountReadSchema,
-            },
-          },
+          cors: true,
         },
       },
     ],
@@ -263,6 +262,7 @@ export default {
         http: {
           method: 'get',
           path: 'token',
+          cors: true,
         },
       },
     ],

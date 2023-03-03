@@ -100,6 +100,7 @@ const updateFunction: ValidatedEventAPIGatewayProxyEvent<
   typeof groupUpdateSchema.properties.body
 > = async (event) => {
   const { gid, group_name = undefined, member = undefined } = event.body;
+
   const { uid } = await firebaseAdmin
     .auth()
     .verifyIdToken(event.headers.Authorization.split(' ')[1]);
@@ -162,17 +163,6 @@ const updateFunction: ValidatedEventAPIGatewayProxyEvent<
     modify.member = member;
   }
 
-  const targetMember: Pick<AccountModel, 'aid'>[] = await query({
-    sql: `
-    SELECT A.aid
-    FROM account A 
-    INNER JOIN account_group AG 
-      ON A.gid = AG.gid 
-      WHERE AG.uid = ?
-        AND A.aid in (?)`,
-    values: [uid, member],
-  });
-
   const commonTransaction = transaction();
 
   if (Object.keys(modify).length !== 0) {
@@ -188,6 +178,16 @@ const updateFunction: ValidatedEventAPIGatewayProxyEvent<
     }
 
     if (modify.member) {
+      const targetMember: Pick<AccountModel, 'aid'>[] = await query({
+        sql: `
+        SELECT A.aid
+        FROM account A 
+        INNER JOIN account_group AG 
+          ON A.gid = AG.gid 
+          WHERE AG.uid = ?
+            AND A.aid in (?)`,
+        values: [uid, member],
+      });
       commonTransaction.query({
         sql: `
         UPDATE account A 

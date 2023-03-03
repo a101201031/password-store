@@ -2,7 +2,6 @@
 import {
   accountCreateSchema,
   accountDeleteSchema,
-  accountReadSchema,
   accountUpdateSchema,
 } from '@apiSchema';
 import type { ValidatedEventAPIGatewayProxyEvent } from '@libs/api-gateway';
@@ -234,7 +233,6 @@ export const createAccount = authMiddyfy({
 
 export const readAccount = authMiddyfy({
   handler: readFunction,
-  inputSchema: accountReadSchema,
 });
 
 export const updateAccount = authMiddyfy({

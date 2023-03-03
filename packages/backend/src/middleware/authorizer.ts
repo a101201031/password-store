@@ -1,7 +1,8 @@
-import middy from '@middy/core';
+import type middy from '@middy/core';
 import type { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
 import { firebaseAdmin } from '@util/firebaseAdmin';
 import { Unauthorized } from 'http-errors';
+
 export const authorizer = (): middy.MiddlewareObj<
   APIGatewayProxyEvent,
   APIGatewayProxyResult
@@ -10,7 +11,10 @@ export const authorizer = (): middy.MiddlewareObj<
     APIGatewayProxyEvent,
     APIGatewayProxyResult
   > = async (request) => {
-    const { headers } = request.event;
+    const { headers, httpMethod } = request.event;
+    if (httpMethod === 'OPTION') {
+      return;
+    }
     const authHeader = 'Authorization';
     if (!(authHeader in headers)) {
       throw new Unauthorized('Not found token');

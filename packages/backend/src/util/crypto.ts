@@ -1,7 +1,7 @@
 import bcrypt from 'bcryptjs';
 import CJS from 'crypto-js';
 
-const saltRounds = parseInt(process.env.HASH_CONFIG_ROUND);
+const saltRounds = parseInt(process.env.HASH_CONFIG_ROUND, 10);
 
 export const oneWayEncrypt = async (plainText: string): Promise<string> => {
   const salt = await bcrypt.genSalt(saltRounds);
@@ -12,9 +12,7 @@ export const oneWayEncrypt = async (plainText: string): Promise<string> => {
 export const compareOneWay = async (
   plainText: string,
   hash: string,
-): Promise<Boolean> => {
-  return await bcrypt.compare(plainText, hash);
-};
+): Promise<Boolean> => bcrypt.compare(plainText, hash);
 
 export const makeUserHash = (text: string): string =>
   CJS.SHA256(text).toString();
