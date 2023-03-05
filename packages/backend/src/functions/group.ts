@@ -254,7 +254,7 @@ const deleteFunction = async (
 
 export const createGroup = authMiddyfy({
   handler: createFunction,
-  inputSchema: groupCreateSchema,
+  eventSchema: groupCreateSchema,
 });
 
 export const readGroup = authMiddyfy({
@@ -263,10 +263,10 @@ export const readGroup = authMiddyfy({
 
 export const updateGroup = authMiddyfy({
   handler: updateFunction,
-  inputSchema: groupUpdateSchema,
+  eventSchema: groupUpdateSchema,
 });
 
 export const deleteGroup = authMiddyfy({
   handler: deleteFunction,
-  inputSchema: groupDeleteSchema,
+  eventSchema: groupDeleteSchema,
 });

@@ -241,15 +241,15 @@ export const readUser = authMiddyfy({
 
 export const updateUser = authMiddyfy({
   handler: updateFunction,
-  inputSchema: userUpdateSchema,
+  eventSchema: userUpdateSchema,
 });
 
 export const deleteUser = authMiddyfy({
   handler: deleteFunction,
-  inputSchema: userDeleteSchema,
+  eventSchema: userDeleteSchema,
 });
 
 export const updateUserPassword = authMiddyfy({
   handler: updateUserPasswordFunction,
-  inputSchema: userPasswordUpdateSchema,
+  eventSchema: userPasswordUpdateSchema,
 });

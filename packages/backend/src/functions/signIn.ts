@@ -32,5 +32,5 @@ const signInFunction: ValidatedEventAPIGatewayProxyEvent<
 
 export const signIn = middyfy({
   handler: signInFunction,
-  inputSchema: signInSchema,
+  eventSchema: signInSchema,
 });

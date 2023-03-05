@@ -1,5 +1,6 @@
 import middy from '@middy/core';
 import middyValidator from '@middy/validator';
+import { transpileSchema } from '@middy/validator/transpile';
 import middyJsonBodyParser from '@middy/http-json-body-parser';
 import middyErrorHandler from '@middy/http-error-handler';
 import { authorizer } from '@middleware';
@@ -7,20 +8,20 @@ import middyCors from '@middy/http-cors';
 
 interface MiddfyParams {
   handler: any;
-  inputSchema?: object;
+  eventSchema?: object;
 }
 
-export const middyfy = ({ handler, inputSchema }: MiddfyParams) => {
-  if (inputSchema) {
+export const middyfy = ({ handler, eventSchema }: MiddfyParams) => {
+  if (eventSchema) {
     return middy(handler)
-      .use(middyJsonBodyParser())
       .use(
         middyCors({
           origins: [`https://${process.env.FRONTEND_DOMAIN_NAME}`],
         }),
       )
-      .use(middyValidator({ inputSchema }))
-      .use(middyErrorHandler());
+      .use(middyJsonBodyParser())
+      .use(middyErrorHandler())
+      .use(middyValidator({ eventSchema: transpileSchema(eventSchema) }));
   }
   return middy(handler)
     .use(
@@ -32,18 +33,18 @@ export const middyfy = ({ handler, inputSchema }: MiddfyParams) => {
     .use(middyErrorHandler());
 };
 
-export const authMiddyfy = ({ handler, inputSchema }: MiddfyParams) => {
-  if (inputSchema) {
+export const authMiddyfy = ({ handler, eventSchema }: MiddfyParams) => {
+  if (eventSchema) {
     return middy(handler)
       .use(
         middyCors({
           origins: [`https://${process.env.FRONTEND_DOMAIN_NAME}`],
         }),
       )
-      .use(authorizer())
       .use(middyJsonBodyParser())
-      .use(middyValidator({ inputSchema }))
-      .use(middyErrorHandler());
+      .use(middyErrorHandler())
+      .use(middyValidator({ eventSchema: transpileSchema(eventSchema) }))
+      .use(authorizer());
   }
   return middy(handler)
     .use(
@@ -51,7 +52,7 @@ export const authMiddyfy = ({ handler, inputSchema }: MiddfyParams) => {
         origins: [`https://${process.env.FRONTEND_DOMAIN_NAME}`],
       }),
     )
-    .use(authorizer())
     .use(middyJsonBodyParser())
-    .use(middyErrorHandler());
+    .use(middyErrorHandler())
+    .use(authorizer());
 };

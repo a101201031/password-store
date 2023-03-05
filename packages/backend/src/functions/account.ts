@@ -228,7 +228,7 @@ const deleteFunction = async (
 
 export const createAccount = authMiddyfy({
   handler: createFunction,
-  inputSchema: accountCreateSchema,
+  eventSchema: accountCreateSchema,
 });
 
 export const readAccount = authMiddyfy({
@@ -237,10 +237,10 @@ export const readAccount = authMiddyfy({
 
 export const updateAccount = authMiddyfy({
   handler: updateFunction,
-  inputSchema: accountUpdateSchema,
+  eventSchema: accountUpdateSchema,
 });
 
 export const deleteAccount = authMiddyfy({
   handler: deleteFunction,
-  inputSchema: accountDeleteSchema,
+  eventSchema: accountDeleteSchema,
 });

@@ -48,5 +48,5 @@ const signUpFunction: ValidatedEventAPIGatewayProxyEvent<
 
 export const signUp = middyfy({
   handler: signUpFunction,
-  inputSchema: signUpSchema,
+  eventSchema: signUpSchema,
 });

@@ -16,7 +16,7 @@ const serverlessConfiguration: AWS = {
   ],
   provider: {
     name: 'aws',
-    runtime: 'nodejs14.x',
+    runtime: 'nodejs16.x',
     region: 'ap-northeast-2',
     apiGateway: {
       minimumCompressionSize: 1024,
@@ -38,7 +38,7 @@ const serverlessConfiguration: AWS = {
       minify: false,
       sourcemap: true,
       exclude: ['aws-sdk'],
-      target: 'node14',
+      target: 'node16',
       define: { 'require.resolve': undefined },
       platform: 'node',
       concurrency: 10,
@@ -60,34 +60,6 @@ const serverlessConfiguration: AWS = {
   },
   resources: {
     Resources: {
-      GatewayResponseDefault4XX: {
-        Type: 'AWS::ApiGateway::GatewayResponse',
-        Properties: {
-          ResponseParameters: {
-            'gatewayresponse.header.Access-Control-Allow-Headers':
-              "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'",
-            'gatewayresponse.header.Access-Control-Allow-Methods':
-              "'GET,OPTIONS'",
-            'gatewayresponse.header.Access-Control-Allow-Origin': "'*'",
-          },
-          ResponseType: 'DEFAULT_4XX',
-          RestApiId: { Ref: 'ApiGatewayRestApi' },
-        },
-      },
-      GatewayResponseDefault5XX: {
-        Type: 'AWS::ApiGateway::GatewayResponse',
-        Properties: {
-          ResponseParameters: {
-            'gatewayresponse.header.Access-Control-Allow-Headers':
-              "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'",
-            'gatewayresponse.header.Access-Control-Allow-Methods':
-              "'GET,OPTIONS'",
-            'gatewayresponse.header.Access-Control-Allow-Origin': "'*'",
-          },
-          ResponseType: 'DEFAULT_5XX',
-          RestApiId: { Ref: 'ApiGatewayRestApi' },
-        },
-      },
       VPC: {
         Type: 'AWS::EC2::VPC',
         Properties: {
@@ -293,7 +265,7 @@ const serverlessConfiguration: AWS = {
         Properties: {
           DBInstanceIdentifier: 'passsword-store-prod',
           AllocatedStorage: '20',
-          DBInstanceClass: 'db.t3.micro',
+          DBInstanceClass: 'db.t4g.micro',
           Engine: 'MySQL',
           MasterUsername: process.env.MYSQL_USERNAME,
           MasterUserPassword: process.env.MYSQL_PASSWORD,

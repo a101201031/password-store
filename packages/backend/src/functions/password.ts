@@ -67,5 +67,5 @@ const readFunction = async (
 
 export const readPassword = authMiddyfy({
   handler: readFunction,
-  inputSchema: passwordReadSchema,
+  eventSchema: passwordReadSchema,
 });

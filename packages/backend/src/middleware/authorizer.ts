@@ -12,7 +12,7 @@ export const authorizer = (): middy.MiddlewareObj<
     APIGatewayProxyResult
   > = async (request) => {
     const { headers, httpMethod } = request.event;
-    if (httpMethod === 'OPTION') {
+    if (httpMethod === 'OPTIONS') {
       return;
     }
     const authHeader = 'Authorization';
