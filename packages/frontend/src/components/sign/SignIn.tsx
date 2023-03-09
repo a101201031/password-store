@@ -181,7 +181,7 @@ function SignIn() {
             </Button>
             <Grid container>
               <Grid item>
-                <MuiLink component={Link} to="/signup" variant="body2">
+                <MuiLink component={Link} to="/sign-up" variant="body2">
                   {"Don't have an account? Sign Up"}
                 </MuiLink>
               </Grid>
