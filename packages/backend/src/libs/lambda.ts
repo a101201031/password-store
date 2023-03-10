@@ -3,7 +3,7 @@ import middyValidator from '@middy/validator';
 import { transpileSchema } from '@middy/validator/transpile';
 import middyJsonBodyParser from '@middy/http-json-body-parser';
 import middyErrorHandler from '@middy/http-error-handler';
-import { authorizer } from '@middleware';
+import { authorizer } from '@middleware/authorizer';
 import middyCors from '@middy/http-cors';
 
 interface MiddfyParams {

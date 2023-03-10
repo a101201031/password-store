@@ -1,8 +1,8 @@
-/* eslint-disable camelcase */
-import { passwordReadSchema } from '@apiSchema';
+import { passwordReadSchema } from '@apiSchema/password';
 import { formatJSONResponse } from '@libs/api-gateway';
 import { authMiddyfy } from '@libs/lambda';
-import type { AccountModel, UserModel } from '@model';
+import type { AccountModel } from '@model/account';
+import type { UserModel } from '@model/user';
 import { aesDecrypt } from '@util/crypto';
 import { firebaseAdmin } from '@util/firebaseAdmin';
 import { query } from '@util/mysql';

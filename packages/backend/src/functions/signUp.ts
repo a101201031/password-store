@@ -1,52 +1,61 @@
-import { signUpSchema } from '@apiSchema';
+import { signUpSchema } from '@apiSchema/signUp';
 import type { ValidatedEventAPIGatewayProxyEvent } from '@libs/api-gateway';
 import { formatJSONResponse } from '@libs/api-gateway';
-import { middyfy } from '@libs/lambda';
-import '@util/firebase';
-import { query, transaction } from '@util/mysql';
+import { authMiddyfy } from '@libs/lambda';
 import { makeUserHash, oneWayEncrypt } from '@util/crypto';
+import { query, transaction } from '@util/mysql';
 import cuid from 'cuid';
-import { createUserWithEmailAndPassword, getAuth } from 'firebase/auth';
 import { BadRequest, InternalServerError } from 'http-errors';
 
 const signUpFunction: ValidatedEventAPIGatewayProxyEvent<
   typeof signUpSchema.properties.body
 > = async (event) => {
-  const { name, email, password } = event.body;
-  const result = await query({
+  const {
+    name,
+    email,
+    password,
+    decodedIdToken: { uid },
+  } = event.body;
+  const emailDuplicate = await query({
     sql: 'SELECT email FROM user WHERE email = ?',
     values: [email],
   });
-  if (result[0]) {
-    throw new BadRequest('Email already in use');
-  }
+  if (emailDuplicate[0]) throw new BadRequest('Email already in use');
 
-  const auth = getAuth();
   try {
-    const { user } = await createUserWithEmailAndPassword(
-      auth,
-      email,
-      password,
-    );
     const enPassword = await oneWayEncrypt(password);
-    const hashKey = await makeUserHash(enPassword);
+    const hashKey = makeUserHash(enPassword);
     await transaction()
       .query({
-        sql: 'INSERT INTO user(email, uid, user_name, password, hash_key, last_password_changed) VALUES(?, ?, ?, ?, ?, SYSDATE())',
-        values: [email, user.uid, name, enPassword, hashKey],
+        sql: `
+          INSERT INTO
+            user(
+              email,
+              uid,
+              user_name,
+              password,
+              hash_key)
+          VALUES(?, ?, ?, ?, ?)`,
+        values: [email, uid, name, enPassword, hashKey],
       })
       .query({
-        sql: 'INSERT INTO account_group(uid, gid, group_name) VALUES(?, ?, ?)',
-        values: [user.uid, cuid(), 'Default Group'],
+        sql: `
+          INSERT INTO 
+            account_group(
+              uid,
+              gid,
+              group_name) 
+          VALUES(?, ?, ?)`,
+        values: [uid, cuid(), 'Default Group'],
       })
       .commit();
-    return formatJSONResponse({ token: await user.getIdToken() });
+    return formatJSONResponse({ message: 'success' });
   } catch (e) {
     throw new InternalServerError();
   }
 };
 
-export const signUp = middyfy({
+export const signUp = authMiddyfy({
   handler: signUpFunction,
   eventSchema: signUpSchema,
 });

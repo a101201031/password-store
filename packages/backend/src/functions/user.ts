@@ -3,11 +3,12 @@ import {
   userDeleteSchema,
   userPasswordUpdateSchema,
   userUpdateSchema,
-} from '@apiSchema';
+} from '@apiSchema/user';
 import type { ValidatedEventAPIGatewayProxyEvent } from '@libs/api-gateway';
 import { formatJSONResponse } from '@libs/api-gateway';
 import { authMiddyfy } from '@libs/lambda';
-import type { AccountModel, UserModel } from '@model';
+import type { AccountModel } from '@model/account';
+import type { UserModel } from '@model/user';
 import {
   aesDecrypt,
   aesEncrypt,

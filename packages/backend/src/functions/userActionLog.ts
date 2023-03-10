@@ -1,6 +1,6 @@
 import { formatJSONResponse } from '@libs/api-gateway';
 import { authMiddyfy } from '@libs/lambda';
-import type { UserActionLogModel } from '@model';
+import type { UserActionLogModel } from '@model/userActionLog';
 import '@util/firebase';
 import { firebaseAdmin } from '@util/firebaseAdmin';
 import { query } from '@util/mysql';

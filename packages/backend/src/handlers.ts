@@ -1,13 +1,11 @@
+import { accountCreateSchema, accountUpdateSchema } from '@apiSchema/account';
+import { groupCreateSchema, groupUpdateSchema } from '@apiSchema/group';
+import { signUpSchema } from '@apiSchema/signUp';
 import {
-  accountCreateSchema,
-  accountUpdateSchema,
-  groupCreateSchema,
-  groupUpdateSchema,
-  signUpSchema,
   userDeleteSchema,
   userPasswordUpdateSchema,
   userUpdateSchema,
-} from '@apiSchema';
+} from '@apiSchema/user';
 import { handlerPath } from '@libs/handler-resolver';
 
 export default {
@@ -262,6 +260,20 @@ export default {
         http: {
           method: 'get',
           path: 'token',
+          cors: true,
+        },
+      },
+    ],
+  },
+  readUserActionLog: {
+    handler: `${handlerPath(
+      __dirname,
+    )}/functions/userActionLog.readUserActionLog`,
+    events: [
+      {
+        http: {
+          method: 'get',
+          path: 'log',
           cors: true,
         },
       },

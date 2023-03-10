@@ -3,11 +3,12 @@ import {
   groupCreateSchema,
   groupDeleteSchema,
   groupUpdateSchema,
-} from '@apiSchema';
+} from '@apiSchema/group';
 import type { ValidatedEventAPIGatewayProxyEvent } from '@libs/api-gateway';
 import { formatJSONResponse } from '@libs/api-gateway';
 import { authMiddyfy } from '@libs/lambda';
-import type { AccountGroupModel, AccountModel } from '@model';
+import type { AccountModel } from '@model/account';
+import type { AccountGroupModel } from '@model/accountGroup';
 import { firebaseAdmin } from '@util/firebaseAdmin';
 import { query, transaction } from '@util/mysql';
 import type { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';

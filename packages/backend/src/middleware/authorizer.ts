@@ -2,16 +2,21 @@ import type middy from '@middy/core';
 import type { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
 import { firebaseAdmin } from '@util/firebaseAdmin';
 import { Unauthorized } from 'http-errors';
+import type { DecodedIdToken } from 'firebase-admin/auth';
+
+interface AuthorizerEventTypes extends Omit<APIGatewayProxyEvent, 'body'> {
+  body: { decodedIdToken: DecodedIdToken; [key: string]: any };
+}
 
 export const authorizer = (): middy.MiddlewareObj<
-  APIGatewayProxyEvent,
+  AuthorizerEventTypes,
   APIGatewayProxyResult
 > => {
   const before: middy.MiddlewareFn<
-    APIGatewayProxyEvent,
+    AuthorizerEventTypes,
     APIGatewayProxyResult
   > = async (request) => {
-    const { headers, httpMethod } = request.event;
+    const { headers, httpMethod, body } = request.event;
     if (httpMethod === 'OPTIONS') {
       return;
     }
@@ -26,7 +31,8 @@ export const authorizer = (): middy.MiddlewareObj<
     }
 
     try {
-      await firebaseAdmin.auth().verifyIdToken(idToken);
+      const decodedIdToken = await firebaseAdmin.auth().verifyIdToken(idToken);
+      request.event.body = { ...body, decodedIdToken };
     } catch (e) {
       throw new Unauthorized('Invalid token');
     }

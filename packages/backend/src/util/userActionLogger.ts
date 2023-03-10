@@ -1,7 +1,7 @@
 import { transaction } from '@util/mysql';
-import type { UserActionLogModel } from '@model';
+import type { UserActionLogModel } from '@model/userActionLog';
 
-interface ContentTypes {
+interface logContentTypes {
   actionTarget: string;
   action: string;
   actionResult: string;
@@ -9,23 +9,10 @@ interface ContentTypes {
 }
 
 interface LoggerParamsTypes extends Pick<UserActionLogModel, 'uid'> {
-  content: ContentTypes;
+  logContent: logContentTypes;
 }
 
-interface LoggerTypes {
-  ({ uid, content }: LoggerParamsTypes): Promise<void>;
-}
-
-interface LoggerContentTypes {
-  [key: string]: {
-    [key: string]: {
-      success?: ContentTypes;
-      fail?: ContentTypes;
-    };
-  };
-}
-
-const loggerContent: LoggerContentTypes = {
+export const defaultLogContent = {
   user: {
     signIn: {
       success: {
@@ -49,10 +36,31 @@ const loggerContent: LoggerContentTypes = {
         message: 'you have successfully signed up.',
       },
     },
+    changePassword: {
+      success: {
+        actionTarget: 'user',
+        action: 'change password',
+        actionResult: 'success',
+        message: 'you have successfully changed password.',
+      },
+    },
+  },
+  account: {
+    showPassword: {
+      success: {
+        actionTarget: 'account',
+        action: 'show password',
+        actionResult: 'success',
+        message: '',
+      },
+    },
   },
 };
 
-export const userActionlogger: LoggerTypes = async ({ uid, content }) => {
+export const userActionlogger = async ({
+  uid,
+  logContent,
+}: LoggerParamsTypes): Promise<void> => {
   await transaction()
     .query({
       sql: `
@@ -61,7 +69,7 @@ export const userActionlogger: LoggerTypes = async ({ uid, content }) => {
       VALUES
         (?, ?)
       `,
-      values: [uid, JSON.stringify(content)],
+      values: [uid, JSON.stringify(logContent)],
     })
     .commit();
 };

@@ -1,9 +1,10 @@
 import { formatJSONResponse } from '@libs/api-gateway';
+import { authMiddyfy } from '@libs/lambda';
+import type { AccountModel } from '@model/account';
+import type { AccountGroupModel } from '@model/accountGroup';
 import { firebaseAdmin } from '@util/firebaseAdmin';
 import { query } from '@util/mysql';
 import type { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
-import type { AccountGroupModel, AccountModel } from '@model';
-import { authMiddyfy } from '@libs/lambda';
 
 const readFunction = async (
   event: APIGatewayProxyEvent,

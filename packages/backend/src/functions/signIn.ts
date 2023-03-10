@@ -1,36 +1,29 @@
-import '@util/firebase';
-
-import { signInSchema } from '@apiSchema';
+import { signInSchema } from '@apiSchema/signIn';
 import type { ValidatedEventAPIGatewayProxyEvent } from '@libs/api-gateway';
 import { formatJSONResponse } from '@libs/api-gateway';
-import { middyfy } from '@libs/lambda';
-import type { FirebaseError } from 'firebase/app';
-import { getAuth, signInWithEmailAndPassword } from 'firebase/auth';
-import { Unauthorized } from 'http-errors';
+import { authMiddyfy } from '@libs/lambda';
+import { defaultLogContent, userActionlogger } from '@util/userActionLogger';
+import { Forbidden, InternalServerError } from 'http-errors';
 
 const signInFunction: ValidatedEventAPIGatewayProxyEvent<
   typeof signInSchema.properties.body
 > = async (event) => {
-  const { email, password } = event.body;
-  const auth = getAuth();
-
   try {
-    const { user } = await signInWithEmailAndPassword(auth, email, password);
-    const token = await user.getIdToken();
+    const {
+      email,
+      decodedIdToken: { uid, email: emailInToken },
+    } = event.body;
+    if (email !== emailInToken) throw new Forbidden('Access is denied.');
+    const logContent = defaultLogContent.user.signIn.success;
 
-    return formatJSONResponse({ token });
+    userActionlogger({ uid, logContent });
+    return formatJSONResponse({ message: 'success' });
   } catch (e) {
-    const err = e as FirebaseError;
-    if (
-      err.code === 'auth/wrong-password' ||
-      err.code === 'auth/user-not-found'
-    ) {
-      throw new Unauthorized('Incorrect email or password.');
-    }
+    throw new InternalServerError();
   }
 };
 
-export const signIn = middyfy({
+export const signIn = authMiddyfy({
   handler: signInFunction,
   eventSchema: signInSchema,
 });
