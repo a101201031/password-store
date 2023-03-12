@@ -14,7 +14,7 @@ interface ValidatedAPIGatewayProxyEvent<T>
 export interface ValidatedEventAPIGatewayProxyEvent<T>
   extends Handler<ValidatedAPIGatewayProxyEvent<T>, APIGatewayProxyResult> {}
 
-export interface AutorizedAPIGatewayProxyEvent
+export interface AuthorizedAPIGatewayProxyEvent
   extends Omit<APIGatewayProxyEvent, 'body'> {
   body: { decodedIdToken: DecodedIdToken; [key: string]: any };
 }

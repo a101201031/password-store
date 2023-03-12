@@ -20,7 +20,7 @@ const signUpFunction: ValidatedEventAPIGatewayProxyEvent<
     sql: 'SELECT email FROM user WHERE email = ?',
     values: [email],
   });
-  if (emailDuplicate[0]) throw new BadRequest('Email already in use');
+  if (emailDuplicate[0]) throw new BadRequest('Email already in use.');
 
   try {
     const enPassword = await oneWayEncrypt(password);

@@ -4,7 +4,10 @@ import {
   userPasswordUpdateSchema,
   userUpdateSchema,
 } from '@apiSchema/user';
-import type { ValidatedEventAPIGatewayProxyEvent } from '@libs/api-gateway';
+import type {
+  AuthorizedAPIGatewayProxyEvent,
+  ValidatedEventAPIGatewayProxyEvent,
+} from '@libs/api-gateway';
 import { formatJSONResponse } from '@libs/api-gateway';
 import { authMiddyfy } from '@libs/lambda';
 import type { AccountModel } from '@model/account';
@@ -15,24 +18,21 @@ import {
   makeUserHash,
   oneWayEncrypt,
 } from '@util/crypto';
-import '@util/firebase';
-import { firebaseAdmin } from '@util/firebaseAdmin';
 import { query, transaction } from '@util/mysql';
-import type { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
-import type { FirebaseError } from 'firebase-admin';
-import {
-  getAuth,
-  signInWithEmailAndPassword,
-  updatePassword,
-} from 'firebase/auth';
+import type { APIGatewayProxyResult } from 'aws-lambda';
+import { getAuth } from 'firebase-admin/auth';
 import { BadRequest, InternalServerError } from 'http-errors';
+import keys from 'lodash/keys';
+import forEach from 'lodash/forEach';
+
+interface ModifiableUserTypes extends Pick<UserModel, 'user_name'> {}
 
 const readFunction = async (
-  event: APIGatewayProxyEvent,
+  event: AuthorizedAPIGatewayProxyEvent,
 ): Promise<APIGatewayProxyResult> => {
-  const { uid } = await firebaseAdmin
-    .auth()
-    .verifyIdToken(event.headers.Authorization.split(' ')[1]);
+  const {
+    decodedIdToken: { uid },
+  } = event.body;
   const userInfo: Pick<
     UserModel,
     | 'email'
@@ -54,28 +54,26 @@ const readFunction = async (
 const updateFunction: ValidatedEventAPIGatewayProxyEvent<
   typeof userUpdateSchema.properties.body
 > = async (event) => {
-  const { user_name } = event.body;
-  const { uid } = await firebaseAdmin
-    .auth()
-    .verifyIdToken(event.headers.Authorization.split(' ')[1]);
+  const {
+    user_name,
+    decodedIdToken: { uid },
+  } = event.body;
 
-  interface ModifyDataTypes extends Partial<Pick<UserModel, 'user_name'>> {}
+  const modify: Partial<ModifiableUserTypes> = {};
 
-  const modify: ModifyDataTypes = {};
-
-  const originUserName: Pick<UserModel, 'user_name'>[] = await query({
+  const selectUser: ModifiableUserTypes[] = await query({
     sql: `
     SELECT user_name
     FROM user
-    WHERE UID = ?`,
+    WHERE uid = ?`,
     values: [uid],
   });
 
-  if (user_name && user_name !== originUserName[0].user_name) {
+  if (user_name && user_name !== selectUser[0].user_name) {
     modify.user_name = user_name;
   }
 
-  if (Object.keys(modify).length !== 0) {
+  if (keys(modify).length !== 0) {
     await transaction()
       .query({
         sql: `
@@ -93,32 +91,9 @@ const updateFunction: ValidatedEventAPIGatewayProxyEvent<
 const deleteFunction: ValidatedEventAPIGatewayProxyEvent<
   typeof userDeleteSchema.properties.body
 > = async (event) => {
-  const { password } = event.body;
-  const { uid } = await firebaseAdmin
-    .auth()
-    .verifyIdToken(event.headers.Authorization.split(' ')[1]);
-
-  const selectEmailHash: Pick<UserModel, 'email'>[] = await query({
-    sql: `
-      SELECT
-        email, hash_key
-      FROM user
-      WHERE uid = ?`,
-    values: [uid],
-  });
-  const { email } = selectEmailHash[0];
-
-  const auth = getAuth();
-  try {
-    await signInWithEmailAndPassword(auth, email, password);
-  } catch (e) {
-    const err = e as FirebaseError;
-    if (err.code === 'auth/wrong-password') {
-      throw new BadRequest('Incorrect current password.');
-    } else {
-      throw new BadRequest('Unknown error.');
-    }
-  }
+  const {
+    decodedIdToken: { uid },
+  } = event.body;
 
   try {
     await transaction()
@@ -139,9 +114,9 @@ const deleteFunction: ValidatedEventAPIGatewayProxyEvent<
         values: [uid],
       })
       .commit();
-    await firebaseAdmin.auth().deleteUser(uid);
+    await getAuth().deleteUser(uid);
   } catch (e) {
-    throw new InternalServerError();
+    throw new InternalServerError('Failed to delete user.');
   }
 
   return formatJSONResponse({ message: 'success' });
@@ -150,10 +125,12 @@ const deleteFunction: ValidatedEventAPIGatewayProxyEvent<
 const updateUserPasswordFunction: ValidatedEventAPIGatewayProxyEvent<
   typeof userPasswordUpdateSchema.properties.body
 > = async (event) => {
-  const { uid } = await firebaseAdmin
-    .auth()
-    .verifyIdToken(event.headers.Authorization.split(' ')[1]);
-  const { currentPassword, newPassword, confirmPassword } = event.body;
+  const {
+    currentPassword,
+    newPassword,
+    confirmPassword,
+    decodedIdToken: { uid },
+  } = event.body;
   if (currentPassword === newPassword) {
     throw new BadRequest(
       'New password must be different from your current password.',
@@ -162,42 +139,32 @@ const updateUserPasswordFunction: ValidatedEventAPIGatewayProxyEvent<
     throw new BadRequest('Passwords do not match.');
   }
 
-  const selectEmailHash: Pick<UserModel, 'email' | 'hash_key'>[] = await query({
+  const selectHash: Pick<UserModel, 'hash_key'>[] = await query({
     sql: `
-    SELECT
-      email, hash_key
+    SELECT hash_key
     FROM user
     WHERE uid = ?`,
     values: [uid],
   });
-  const { email, hash_key: originHashKey } = selectEmailHash[0];
-
-  const auth = getAuth();
-  try {
-    await signInWithEmailAndPassword(auth, email, currentPassword);
-  } catch (e) {
-    const err = e as FirebaseError;
-    if (err.code === 'auth/wrong-password') {
-      throw new BadRequest('Incorrect current password.');
-    } else {
-      throw new BadRequest('Unknown error.');
-    }
-  }
+  const { hash_key: originHashKey } = selectHash[0];
 
   const enPassword = await oneWayEncrypt(newPassword);
-  const newHashKey = await makeUserHash(enPassword);
+  const newHashKey = makeUserHash(enPassword);
 
-  const accountPassword: Pick<
+  const selectAccountPassword: Pick<
     AccountModel,
     'aid' | 'password' | 'updated_at'
   >[] = await query({
     sql: `
-      SELECT A.aid, A.password, A.updated_at
+      SELECT 
+        A.aid, 
+        A.password, 
+        A.updated_at
       FROM account A
       INNER JOIN account_group AG
         ON A.gid = AG.gid
-      WHERE AG.uid = ?
-        AND A.authentication = 'standalone'`,
+          WHERE AG.uid = ?
+            AND password IS NOT NULL`,
     values: [uid],
   });
 
@@ -205,11 +172,13 @@ const updateUserPasswordFunction: ValidatedEventAPIGatewayProxyEvent<
     const hashChangeTransaction = transaction().query({
       sql: `
         UPDATE user
-        SET hash_key = ?, last_password_changed = NOW()
+        SET 
+          hash_key = ?, 
+          last_password_changed = NOW()
         WHERE uid = ?`,
       values: [newHashKey, uid],
     });
-    accountPassword.forEach((v) => {
+    forEach(selectAccountPassword, (v) => {
       hashChangeTransaction.query({
         sql: `
           UPDATE account A
@@ -227,8 +196,6 @@ const updateUserPasswordFunction: ValidatedEventAPIGatewayProxyEvent<
       });
     });
     await hashChangeTransaction.commit();
-
-    await updatePassword(auth.currentUser, newPassword);
   } catch (e) {
     throw new InternalServerError();
   }

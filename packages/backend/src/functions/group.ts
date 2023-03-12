@@ -4,62 +4,73 @@ import {
   groupDeleteSchema,
   groupUpdateSchema,
 } from '@apiSchema/group';
-import type { ValidatedEventAPIGatewayProxyEvent } from '@libs/api-gateway';
+import type {
+  AuthorizedAPIGatewayProxyEvent,
+  ValidatedEventAPIGatewayProxyEvent,
+} from '@libs/api-gateway';
 import { formatJSONResponse } from '@libs/api-gateway';
 import { authMiddyfy } from '@libs/lambda';
 import type { AccountModel } from '@model/account';
 import type { AccountGroupModel } from '@model/accountGroup';
-import { firebaseAdmin } from '@util/firebaseAdmin';
 import { query, transaction } from '@util/mysql';
-import type { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
+import type { APIGatewayProxyResult } from 'aws-lambda';
 import cuid from 'cuid';
 import { BadRequest } from 'http-errors';
-import { difference } from 'lodash';
+import difference from 'lodash/difference';
+import keys from 'lodash/keys';
+import map from 'lodash/map';
+
+interface GroupMemberTypes extends Pick<AccountModel, 'aid'> {}
+
+interface ModifiableGroupTypes
+  extends Partial<Pick<AccountGroupModel, 'group_name'>> {
+  member?: string[];
+}
 
 const createFunction: ValidatedEventAPIGatewayProxyEvent<
   typeof groupCreateSchema.properties.body
 > = async (event) => {
-  const { group_name } = event.body;
-  const member = [...(event.body.member as unknown as AccountModel['aid'][])];
-  const { uid } = await firebaseAdmin
-    .auth()
-    .verifyIdToken(event.headers.Authorization.split(' ')[1]);
+  const {
+    group_name,
+    decodedIdToken: { uid },
+  } = event.body;
+  const member = [...(event.body.member as unknown as GroupMemberTypes[])];
 
   const gid = cuid();
-
-  const group = await query({
+  const selectGroup = await query({
     sql: `
-    SELECT group_name 
-    FROM account_group 
-    WHERE uid = ? 
-      AND group_name = ?`,
+      SELECT group_name 
+      FROM account_group 
+      WHERE uid = ? 
+        AND group_name = ?`,
     values: [uid, group_name],
   });
-  if (group[0]) {
-    throw new BadRequest('Group already in use');
+  if (selectGroup[0]) {
+    throw new BadRequest('Group already in use.');
   }
 
-  const targetMember: Pick<AccountModel, 'aid'>[] | undefined =
+  const targetMember: GroupMemberTypes[] | undefined =
     member.length === 0
       ? undefined
       : await query({
           sql: `
-          SELECT A.aid
-          FROM account A 
-          INNER JOIN account_group AG 
-            ON A.gid = AG.gid 
-            WHERE AG.uid = ?
-              AND A.aid in (?)`,
+            SELECT A.aid
+            FROM account A 
+            INNER JOIN account_group AG 
+              ON A.gid = AG.gid 
+              WHERE AG.uid = ?
+                AND A.aid in (?)`,
           values: [uid, member],
         });
 
   const commonTransaction = transaction().query({
     sql: `
-    INSERT INTO account_group
-      (uid,
-      gid,
-      group_name)
-    VALUES (?, ?, ?)`,
+      INSERT INTO 
+        account_group(
+          uid,
+          gid,
+          group_name)
+        VALUES (?, ?, ?)`,
     values: [uid, gid, group_name],
   });
 
@@ -67,13 +78,13 @@ const createFunction: ValidatedEventAPIGatewayProxyEvent<
     await commonTransaction
       .query({
         sql: `
-        UPDATE account A 
-        INNER JOIN account_group AG 
-          ON A.gid = AG.gid 
-        SET A.gid = ? 
-        WHERE AG.uid = ? 
-          AND A.aid IN (?)`,
-        values: [gid, uid, targetMember.map((v) => v.aid)],
+          UPDATE account A 
+          INNER JOIN account_group AG 
+            ON A.gid = AG.gid 
+          SET A.gid = ? 
+          WHERE AG.uid = ? 
+            AND A.aid IN (?)`,
+        values: [gid, uid, map(targetMember, (v) => v.aid)],
       })
       .commit();
   } else {
@@ -84,81 +95,87 @@ const createFunction: ValidatedEventAPIGatewayProxyEvent<
 };
 
 const readFunction = async (
-  event: APIGatewayProxyEvent,
+  event: AuthorizedAPIGatewayProxyEvent,
 ): Promise<APIGatewayProxyResult> => {
-  const { uid } = await firebaseAdmin
-    .auth()
-    .verifyIdToken(event.headers.Authorization.split(' ')[1]);
-
-  const groups = await query({
-    sql: `SELECT AG.gid, AG.group_name, AG.created_at, COUNT(A.aid) accounts FROM account_group AG LEFT OUTER JOIN account A ON AG.gid = A.gid WHERE AG.uid = ? GROUP BY AG.gid, AG.group_name, AG.created_at`,
+  const {
+    decodedIdToken: { uid },
+  } = event.body;
+  const selectGroup = await query({
+    sql: `
+      SELECT 
+        AG.gid, 
+        AG.group_name, 
+        AG.created_at, 
+        COUNT(A.aid) 
+        accounts 
+      FROM account_group AG 
+      LEFT OUTER JOIN account A 
+        ON AG.gid = A.gid 
+          WHERE AG.uid = ? 
+      GROUP BY AG.gid, AG.group_name, AG.created_at`,
     values: [uid],
   });
-  return formatJSONResponse({ groups, message: 'success' });
+  return formatJSONResponse({ groups: selectGroup, message: 'success' });
 };
 
 const updateFunction: ValidatedEventAPIGatewayProxyEvent<
   typeof groupUpdateSchema.properties.body
 > = async (event) => {
-  const { gid, group_name = undefined, member = undefined } = event.body;
+  const {
+    gid,
+    group_name = undefined,
+    member = undefined,
+    decodedIdToken: { uid },
+  } = event.body;
 
-  const { uid } = await firebaseAdmin
-    .auth()
-    .verifyIdToken(event.headers.Authorization.split(' ')[1]);
+  const modify: ModifiableGroupTypes = {};
 
-  interface OriginGroupTypes
-    extends Pick<AccountGroupModel, 'gid' | 'group_name'> {}
-
-  interface ModifyDataTypes
-    extends Partial<Pick<AccountGroupModel, 'group_name'>> {
-    member?: string[];
-  }
-
-  const modify: ModifyDataTypes = {};
-
-  const group: OriginGroupTypes[] = await query({
+  const selectGroup = await query({
     sql: `
-    SELECT gid, group_name
-    FROM account_group 
-    WHERE uid = ? 
-      AND gid = ?`,
+      SELECT 
+        gid,
+        group_name
+      FROM account_group 
+      WHERE uid = ? 
+        AND gid = ?`,
     values: [uid, gid],
   });
-  if (!group[0]) {
-    throw new BadRequest('Group does not exist');
+  if (!selectGroup[0]) {
+    throw new BadRequest('Group does not exist.');
   }
 
-  const targetGroupDupCheck = await query({
-    sql: `
-    SELECT gid, group_name 
-    FROM account_group 
-    WHERE uid = ? 
-      AND group_name = ?
-      AND gid != ?`,
-    values: [uid, group_name, gid],
-  });
-  if (targetGroupDupCheck[0]) {
-    throw new BadRequest('Group already in use');
-  }
-  const originMember: Pick<AccountModel, 'aid'>[] = await query({
-    sql: `
-    SELECT A.aid
-    FROM account A 
-    INNER JOIN account_group AG 
-      ON A.gid = AG.gid 
-      WHERE AG.uid = ?
-        AND A.gid`,
-    values: [uid, gid],
-  });
-
-  if (group_name && group_name !== group[0].group_name) {
+  if (group_name && group_name !== selectGroup[0].group_name) {
+    const selectTargetGroup = await query({
+      sql: `
+        SELECT 
+          gid, 
+          group_name 
+        FROM account_group 
+        WHERE uid = ? 
+          AND group_name = ?
+          AND gid != ?`,
+      values: [uid, group_name, gid],
+    });
+    if (selectTargetGroup[0]) {
+      throw new BadRequest('Group already in use.');
+    }
     modify.group_name = group_name;
   }
 
+  const selectOriginMember: GroupMemberTypes[] = await query({
+    sql: `
+      SELECT A.aid
+      FROM account A 
+      INNER JOIN account_group AG 
+        ON A.gid = AG.gid 
+        WHERE AG.uid = ?
+          AND A.gid = ?`,
+    values: [uid, gid],
+  });
   if (
     difference(
       [...new Set(member)],
-      originMember.map((v) => v.aid),
+      map(selectOriginMember, (v) => v.aid),
     ).length !== 0
   ) {
     modify.member = member;
@@ -166,20 +183,20 @@ const updateFunction: ValidatedEventAPIGatewayProxyEvent<
 
   const commonTransaction = transaction();
 
-  if (Object.keys(modify).length !== 0) {
+  if (keys(modify).length !== 0) {
     if (modify.group_name) {
       commonTransaction.query({
         sql: `
-      UPDATE account_group 
-      SET group_name = ? 
-      WHERE uid = ? 
-        AND gid = ?`,
+          UPDATE account_group 
+          SET group_name = ? 
+          WHERE uid = ? 
+            AND gid = ?`,
         values: [modify.group_name, uid, gid],
       });
     }
 
     if (modify.member) {
-      const targetMember: Pick<AccountModel, 'aid'>[] = await query({
+      const selectTargetMember: GroupMemberTypes[] = await query({
         sql: `
         SELECT A.aid
         FROM account A 
@@ -197,7 +214,7 @@ const updateFunction: ValidatedEventAPIGatewayProxyEvent<
         SET A.gid = ? 
         WHERE AG.uid = ? 
           AND A.aid IN (?)`,
-        values: [gid, uid, targetMember.map((v) => v.aid)],
+        values: [gid, uid, map(selectTargetMember, (v) => v.aid)],
       });
     }
     await commonTransaction.commit();
@@ -207,36 +224,38 @@ const updateFunction: ValidatedEventAPIGatewayProxyEvent<
 };
 
 const deleteFunction = async (
-  event: APIGatewayProxyEvent,
+  event: AuthorizedAPIGatewayProxyEvent,
 ): Promise<APIGatewayProxyResult> => {
-  const { gid } = event.pathParameters;
-  const { uid } = await firebaseAdmin
-    .auth()
-    .verifyIdToken(event.headers.Authorization.split(' ')[1]);
+  const {
+    pathParameters: { gid },
+    body: {
+      decodedIdToken: { uid },
+    },
+  } = event;
 
-  const group = await query({
+  const selectGroup = await query({
     sql: `
-    SELECT group_name 
-    FROM account_group 
-    WHERE uid = ? 
-      AND gid = ?`,
+      SELECT group_name 
+      FROM account_group 
+      WHERE uid = ? 
+        AND gid = ?`,
     values: [uid, gid],
   });
-  if (!group[0]) {
-    throw new BadRequest('Not found group');
+  if (!selectGroup[0]) {
+    throw new BadRequest('Group not found.');
   }
 
-  const member: Pick<AccountModel, 'aid'>[] = await query({
+  const selectMember: GroupMemberTypes[] = await query({
     sql: `
-    SELECT A.aid
-    FROM account A
-    INNER JOIN account_group AG
-      ON AG.gid = A.gid
-      WHERE AG.uid = ?
-        AND A.gid = ?`,
+      SELECT A.aid
+      FROM account A
+      INNER JOIN account_group AG
+        ON AG.gid = A.gid
+        WHERE AG.uid = ?
+          AND A.gid = ?`,
     values: [uid, gid],
   });
-  if (member.length !== 0) {
+  if (selectMember.length !== 0) {
     throw new BadRequest('Member exists in a group.');
   }
 

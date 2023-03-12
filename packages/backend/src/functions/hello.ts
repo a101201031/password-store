@@ -7,9 +7,9 @@ import axios from 'axios';
 const helloFunction = async (): Promise<APIGatewayProxyResult> => {
   await query({
     sql: `
-    SELECT
-      *
+    SELECT uid
     FROM user
+    REMIT 1
     `,
   });
 

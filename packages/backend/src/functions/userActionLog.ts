@@ -1,17 +1,16 @@
+import type { AuthorizedAPIGatewayProxyEvent } from '@libs/api-gateway';
 import { formatJSONResponse } from '@libs/api-gateway';
 import { authMiddyfy } from '@libs/lambda';
 import type { UserActionLogModel } from '@model/userActionLog';
-import '@util/firebase';
-import { firebaseAdmin } from '@util/firebaseAdmin';
 import { query } from '@util/mysql';
-import type { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
+import type { APIGatewayProxyResult } from 'aws-lambda';
 
 const readFunction = async (
-  event: APIGatewayProxyEvent,
+  event: AuthorizedAPIGatewayProxyEvent,
 ): Promise<APIGatewayProxyResult> => {
-  const { uid } = await firebaseAdmin
-    .auth()
-    .verifyIdToken(event.headers.Authorization.split(' ')[1]);
+  const {
+    decodedIdToken: { uid },
+  } = event.body;
   const userInfo: Pick<UserActionLogModel, 'content' | 'created_at'> =
     await query({
       sql: `
