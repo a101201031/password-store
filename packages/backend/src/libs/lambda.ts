@@ -5,6 +5,7 @@ import middyJsonBodyParser from '@middy/http-json-body-parser';
 import middyErrorHandler from '@middy/http-error-handler';
 import { authorizer } from '@middleware/authorizer';
 import middyCors from '@middy/http-cors';
+import { firebaseConnect } from '@middleware/firebaseConnect';
 
 interface MiddfyParams {
   handler: any;
@@ -43,6 +44,7 @@ export const authMiddyfy = ({ handler, eventSchema }: MiddfyParams) => {
       )
       .use(middyJsonBodyParser())
       .use(middyErrorHandler())
+      .use(firebaseConnect())
       .use(middyValidator({ eventSchema: transpileSchema(eventSchema) }))
       .use(authorizer());
   }
@@ -54,5 +56,6 @@ export const authMiddyfy = ({ handler, eventSchema }: MiddfyParams) => {
     )
     .use(middyJsonBodyParser())
     .use(middyErrorHandler())
+    .use(firebaseConnect())
     .use(authorizer());
 };
