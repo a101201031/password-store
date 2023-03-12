@@ -1,8 +1,12 @@
-import axios from 'axios';
 import type { AxiosError } from 'axios';
+import isObject from 'lodash/isObject';
 
 function isUnauthorizedError(err: Error | AxiosError | unknown) {
-  return axios.isAxiosError(err) && err.response?.status === 401;
+  return isAxiosError(err) && err.response?.status === 401;
 }
 
-export { isUnauthorizedError };
+function isAxiosError<T extends unknown>(err: unknown): err is AxiosError<T> {
+  return !!isObject(err) && 'isAxiosError' in err && err.isAxiosError === true;
+}
+
+export { isUnauthorizedError, isAxiosError };

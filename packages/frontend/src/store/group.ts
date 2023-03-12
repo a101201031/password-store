@@ -1,9 +1,10 @@
-import { Column } from '@tanstack/react-table';
+import type { Column } from '@tanstack/react-table';
 import { dateToString, fetcher } from 'helper';
 import { AccountGroupModel } from 'model';
 import { atom, selector, selectorFamily } from 'recoil';
-import { SelectorMapper, selectorTrigger } from 'store';
-import { accessTokenAtom } from './token';
+import { accessTokenAtom } from './auth';
+import type { SelectorMapper } from './selectorControl';
+import { selectorTrigger } from './selectorControl';
 
 interface GroupListTypes
   extends Pick<AccountGroupModel, 'gid' | 'group_name' | 'created_at'> {

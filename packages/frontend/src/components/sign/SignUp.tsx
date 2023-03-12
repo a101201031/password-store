@@ -13,11 +13,12 @@ import {
   Typography,
 } from '@mui/material';
 import type { AxiosError } from 'axios';
-import axios from 'axios';
-import { fetcher } from 'helper';
+import type { FirebaseError } from 'firebase/app';
+import { createUserWithEmailAndPassword, getAuth } from 'firebase/auth';
+import { fetcher, isAxiosError, isFirebaseError } from 'helper';
 import { Controller, SubmitHandler, useForm } from 'react-hook-form';
 import type { Location } from 'react-router-dom';
-import { useLocation, useNavigate, Link } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useSetRecoilState } from 'recoil';
 import { accessTokenAtom } from 'store';
 import { signUpSchema } from 'validation';
@@ -52,17 +53,27 @@ function SignUp() {
   const onSubmit: SubmitHandler<SignUpFormTypes> = async (data) => {
     const { name, email, password } = data;
     try {
-      const { token } = await fetcher.post<{ token: string }>({
+      const auth = getAuth();
+      const { user } = await createUserWithEmailAndPassword(
+        auth,
+        email,
+        password,
+      );
+      const accessToken = await user.getIdToken();
+
+      await fetcher.post({
         path: '/sign-up',
         bodyParams: { name, email, password },
+        accessToken,
       });
-      localStorage.setItem('accessToken', token);
-      setToken(token);
+      setToken(accessToken);
       navigate(from);
     } catch (e) {
-      const err = e as Error | AxiosError<string>;
-      if (axios.isAxiosError(err) && err.response) {
-        const errMsg = err.response.data || '';
+      const err = e as Error | AxiosError<string> | FirebaseError;
+      if (isFirebaseError(err) && err.code === 'auth/email-already-in-use') {
+        setError('email', { type: 'custom', message: 'Email already in use.' });
+      } else if (isAxiosError<string>(err)) {
+        const errMsg = err.response?.data || 'server error.';
         setError('email', { type: 'custom', message: errMsg });
       }
     }

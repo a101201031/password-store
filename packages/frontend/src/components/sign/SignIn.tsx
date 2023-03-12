@@ -14,14 +14,20 @@ import {
   Typography,
 } from '@mui/material';
 import type { AxiosError } from 'axios';
-import axios from 'axios';
-import { fetcher } from 'helper';
+import { FirebaseError } from 'firebase/app';
+import {
+  browserSessionPersistence,
+  getAuth,
+  setPersistence,
+  signInWithEmailAndPassword,
+} from 'firebase/auth';
+import { fetcher, isAxiosError, isFirebaseError } from 'helper';
 import { useState } from 'react';
 import { Controller, SubmitHandler, useForm } from 'react-hook-form';
 import type { Location } from 'react-router-dom';
-import { useLocation, useNavigate, Link } from 'react-router-dom';
-import { useResetRecoilState, useSetRecoilState } from 'recoil';
-import { accessTokenAtom, userInfoSltr } from 'store';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { useSetRecoilState } from 'recoil';
+import { accessTokenAtom, firebaseUserAtom } from 'store';
 
 type CustomLocationTypes = Omit<Location, 'state'> & {
   state?: { from?: { pathname: string } };
@@ -31,7 +37,7 @@ interface SignInFormTypes {
   email: string;
   password: string;
 }
-interface AlertStateType {
+interface AlertStateTypes {
   open: boolean;
   message?: string;
 }
@@ -44,34 +50,45 @@ function SignIn() {
     formState: { errors },
     resetField,
   } = useForm<SignInFormTypes>();
-  const [alertState, setAlertState] = useState<AlertStateType>({
+  const [alertState, setAlertState] = useState<AlertStateTypes>({
     open: false,
   });
   const navigate = useNavigate();
   const location = useLocation() as CustomLocationTypes;
   const from = location.state?.from?.pathname || '/';
 
+  const setFirebaseUser = useSetRecoilState(firebaseUserAtom);
   const setAccessToken = useSetRecoilState(accessTokenAtom);
-  const resetUserInfo = useResetRecoilState(userInfoSltr);
 
   const onSubmit: SubmitHandler<SignInFormTypes> = async (data) => {
     const { email, password } = data;
     try {
-      const { token } = await fetcher.post<{ token: string }>({
+      const auth = getAuth();
+      await setPersistence(auth, browserSessionPersistence);
+
+      const { user } = await signInWithEmailAndPassword(auth, email, password);
+      const accessToken = await user.getIdToken();
+      await fetcher.post({
         path: '/sign-in',
-        bodyParams: { email, password },
+        bodyParams: { email },
+        accessToken,
       });
-      localStorage.setItem('accessToken', token);
-      setAccessToken(token);
-      resetUserInfo();
+      setAccessToken(accessToken);
+      setFirebaseUser(user);
       navigate(from);
     } catch (e) {
-      const err = e as Error | AxiosError<string>;
-      if (axios.isAxiosError(err) && err.response) {
-        resetField('password');
-        const alertMsg = err.response.data || 'Unknown error.';
+      const err = e as Error | AxiosError<string> | FirebaseError;
+      if (
+        isFirebaseError(err) &&
+        (err.code === 'auth/wrong-password' ||
+          err.code === 'auth/user-not-found')
+      ) {
+        setAlertState({ open: true, message: 'Incorrect email or password.' });
+      } else if (isAxiosError<string>(err)) {
+        const alertMsg = err.response?.data || 'server error.';
         setAlertState({ open: true, message: alertMsg });
       }
+      resetField('password');
     }
   };
 

@@ -12,7 +12,7 @@ import {
   User,
 } from 'components';
 import { SignIn, SignUp } from 'components/sign';
-import { Route, Routes, Navigate } from 'react-router-dom';
+import { Navigate, Route, Routes } from 'react-router-dom';
 import { ProtectedRoute } from 'router';
 
 export const App = () => (

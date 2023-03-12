@@ -1,8 +1,9 @@
 import { fetcher } from 'helper';
 import type { AccountModel } from 'model';
 import { selectorFamily } from 'recoil';
-import type { SelectorMapper } from 'store';
-import { accessTokenAtom, selectorTrigger } from 'store';
+import { accessTokenAtom } from './auth';
+import type { SelectorMapper } from './selectorControl';
+import { selectorTrigger } from './selectorControl';
 
 interface PasswordParam extends Pick<AccountModel, 'aid'> {}
 

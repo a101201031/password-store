@@ -18,12 +18,30 @@ import {
 import type { AxiosError } from 'axios';
 import axios from 'axios';
 import { AuthAsyncBoundary, CircularIndicator, SignOut } from 'components';
-import { dateToString, fetcher, nowDiffDays } from 'helper';
+import { FirebaseError } from 'firebase/app';
+import {
+  deleteUser,
+  EmailAuthProvider,
+  reauthenticateWithCredential,
+  updatePassword,
+} from 'firebase/auth';
+import {
+  dateToString,
+  fetcher,
+  isAxiosError,
+  isFirebaseError,
+  nowDiffDays,
+} from 'helper';
 import { useState } from 'react';
 import type { SubmitHandler } from 'react-hook-form';
 import { Controller, useForm } from 'react-hook-form';
 import { useRecoilValue, useResetRecoilState, useSetRecoilState } from 'recoil';
-import { accessTokenAtom, snackbarAtom, userInfoSltr } from 'store';
+import {
+  accessTokenAtom,
+  firebaseUserAtom,
+  snackbarAtom,
+  userInfoSltr,
+} from 'store';
 import { changePasswordSchema, changeUserNameSchema } from 'validation';
 
 function User() {
@@ -153,7 +171,7 @@ function UserNameEdit() {
     resolver: yupResolver(changeUserNameSchema),
   });
   const [namePopupOpen, setNamePopupOpen] = useState(false);
-  const idToken = useRecoilValue(accessTokenAtom);
+  const accessToken = useRecoilValue(accessTokenAtom);
   const setSnackbar = useSetRecoilState(snackbarAtom);
   const resetUserInfo = useResetRecoilState(userInfoSltr);
 
@@ -171,7 +189,7 @@ function UserNameEdit() {
       await fetcher.post({
         path: '/user/update',
         bodyParams: { user_name },
-        accessToken: idToken,
+        accessToken,
       });
       reset();
       handleClose();
@@ -263,8 +281,10 @@ function UserPasswordChange() {
   });
 
   const [passwordPopupOpen, setPasswordPopupOpen] = useState(false);
-  const [isSubmit, setIsSubmit] = useState(false);
-  const idToken = useRecoilValue(accessTokenAtom);
+  const [isSubmitted, setIsSubmitted] = useState(false);
+  const firebaseUser = useRecoilValue(firebaseUserAtom);
+  const accessToken = useRecoilValue(accessTokenAtom);
+  const userInfo = useRecoilValue(userInfoSltr);
   const setSnackbar = useSetRecoilState(snackbarAtom);
   const resetUserInfo = useResetRecoilState(userInfoSltr);
 
@@ -278,13 +298,20 @@ function UserPasswordChange() {
 
   const onSubmit: SubmitHandler<UserPasswordFormTypes> = async (data) => {
     const { currentPassword, newPassword, confirmPassword } = data;
-    setIsSubmit(true);
+    setIsSubmitted(true);
     try {
+      const credential = EmailAuthProvider.credential(
+        firebaseUser.email || userInfo.email,
+        currentPassword,
+      );
+      await reauthenticateWithCredential(firebaseUser, credential);
       await fetcher.post({
         path: '/user/password',
         bodyParams: { currentPassword, newPassword, confirmPassword },
-        accessToken: idToken,
+        accessToken,
       });
+      await updatePassword(firebaseUser, newPassword);
+
       reset();
       handleClose();
       setSnackbar({
@@ -293,15 +320,18 @@ function UserPasswordChange() {
         message: 'Password has been modified successfully.',
       });
       resetUserInfo();
-      setIsSubmit(false);
+      setIsSubmitted(false);
     } catch (e) {
-      setIsSubmit(false);
-      const err = e as Error | AxiosError<string>;
-      if (axios.isAxiosError(err) && err.response) {
-        const alertMsg =
-          (typeof err.response.data === 'string' && err.response.data) ||
-          'Unknown error.';
-        setError('currentPassword', { type: 'custom' });
+      setIsSubmitted(false);
+      const err = e as Error | AxiosError | FirebaseError;
+      if (isFirebaseError(err) && err.code === 'auth/wrong-password') {
+        setError('currentPassword', {
+          type: 'custom',
+          message: 'Incorrect current password.',
+        });
+      } else if (isAxiosError<string>(err) && err.response) {
+        const alertMsg = err.response?.data || 'server error.';
+        setError('newPassword', { type: 'custom' });
         setSnackbar({ open: true, level: 'error', message: alertMsg });
       }
     }
@@ -386,7 +416,7 @@ function UserPasswordChange() {
               />
             </DialogContent>
             <DialogActions>
-              <Button variant="contained" type="submit" disabled={isSubmit}>
+              <Button variant="contained" type="submit" disabled={isSubmitted}>
                 Save
               </Button>
               <Button onClick={handleClose}>Cancle</Button>
@@ -413,7 +443,10 @@ function UserDelete() {
 
   const [deletePopupOpen, setDeletePopupOpen] = useState(false);
   const [isDeleted, setIsDeleted] = useState(false);
-  const idToken = useRecoilValue(accessTokenAtom);
+  const [isSubmitted, setIsSubmitted] = useState(false);
+  const firebaseUser = useRecoilValue(firebaseUserAtom);
+  const accessToken = useRecoilValue(accessTokenAtom);
+  const userInfo = useRecoilValue(userInfoSltr);
   const setSnackbar = useSetRecoilState(snackbarAtom);
 
   const handleOpenClick = () => {
@@ -427,21 +460,37 @@ function UserDelete() {
   const onSubmit: SubmitHandler<UserDeleteFormTypes> = async (data) => {
     const { password } = data;
     try {
+      setIsSubmitted(true);
+      const credential = EmailAuthProvider.credential(
+        firebaseUser.email || userInfo.email,
+        password,
+      );
+      await reauthenticateWithCredential(firebaseUser, credential);
       await fetcher.post({
         path: '/user/delete',
         bodyParams: { password },
-        accessToken: idToken,
+        accessToken,
       });
-      handleClose();
-      setIsDeleted(true);
     } catch (e) {
-      const err = e as Error | AxiosError<string>;
-      if (axios.isAxiosError(err) && err.response) {
-        const alertMsg =
-          (typeof err.response.data === 'string' && err.response.data) ||
-          'Unknown error.';
-        setError('password', { type: 'custom' });
+      setIsSubmitted(false);
+      const err = e as Error | AxiosError | FirebaseError;
+      if (isFirebaseError(err) && err.code === 'auth/wrong-password') {
+        setError('password', {
+          type: 'custom',
+          message: 'Incorrect current password.',
+        });
+      } else if (isAxiosError<string>(err) && err.response) {
+        const alertMsg = err.response?.data || 'server error.';
         setSnackbar({ open: true, level: 'error', message: alertMsg });
+      }
+    }
+    try {
+      await deleteUser(firebaseUser);
+    } catch (e) {
+      const err = e as Error | FirebaseError;
+      if (isFirebaseError(err) && err.code === 'auth/user-token-expired') {
+        handleClose();
+        setIsDeleted(true);
       }
     }
   };
@@ -509,6 +558,7 @@ function UserDelete() {
               variant="contained"
               color="error"
               type="submit"
+              disabled={isSubmitted}
             >
               Delete
             </Button>

@@ -1,3 +1,4 @@
+import { getAuth, signOut } from 'firebase/auth';
 import { useEffect } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { useSetRecoilState } from 'recoil';
@@ -5,10 +6,10 @@ import { accessTokenAtom } from 'store';
 
 function SignOut() {
   const location = useLocation();
-  localStorage.removeItem('accessToken');
   const setAccessToken = useSetRecoilState(accessTokenAtom);
 
   useEffect(() => {
+    signOut(getAuth());
     setAccessToken(undefined);
   });
 

@@ -1,9 +1,10 @@
-import { atom, selector, selectorFamily } from 'recoil';
 import { fetcher } from 'helper';
-import { AccountModel, AccountGroupModel } from 'model';
-import { accessTokenAtom } from './token';
-import { SelectorMapper, selectorTrigger } from 'store';
-import { concat } from 'lodash';
+import concat from 'lodash/concat';
+import { AccountGroupModel, AccountModel } from 'model';
+import { atom, selector, selectorFamily } from 'recoil';
+import { accessTokenAtom } from './auth';
+import type { SelectorMapper } from './selectorControl';
+import { selectorTrigger } from './selectorControl';
 
 export interface AccountListTypes
   extends Pick<AccountGroupModel, 'gid' | 'group_name'> {

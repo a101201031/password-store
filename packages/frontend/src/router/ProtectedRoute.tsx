@@ -1,19 +1,24 @@
 import { Navigate, Outlet, useLocation } from 'react-router-dom';
 import { useRecoilValue } from 'recoil';
-import { accessTokenAtom } from 'store';
+import { accessTokenAtom, isCredentialLoadedAtom } from 'store';
 
 interface ProtectedRouteProps {
   to?: string;
 }
 
 function ProtectedRoute({ to = '/sign-in' }: ProtectedRouteProps) {
-  let location = useLocation();
+  const location = useLocation();
   const accessToken = useRecoilValue(accessTokenAtom);
+  const isCredentialLoaded = useRecoilValue(isCredentialLoadedAtom);
 
-  return accessToken ? (
-    <Outlet />
+  return isCredentialLoaded ? (
+    accessToken ? (
+      <Outlet />
+    ) : (
+      <Navigate to={to} state={{ from: location }} replace />
+    )
   ) : (
-    <Navigate to={to} state={{ from: location }} replace />
+    <></>
   );
 }
 

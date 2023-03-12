@@ -1,16 +1,22 @@
-import { FC } from 'react';
-import { App } from 'App';
-import { theme } from 'theme';
-import { BrowserRouter as Router } from 'react-router-dom';
 import { ThemeProvider } from '@mui/material/styles';
+import { App } from 'App';
+import { BrowserRouter as Router } from 'react-router-dom';
 import { RecoilRoot } from 'recoil';
+import { theme } from 'theme';
+import { FirebaseRoot } from './Firebase';
 
-export const Bootstrap: FC = () => (
-  <ThemeProvider theme={theme}>
-    <Router>
-      <RecoilRoot>
-        <App />
-      </RecoilRoot>
-    </Router>
-  </ThemeProvider>
-);
+function Bootstrap() {
+  return (
+    <ThemeProvider theme={theme}>
+      <Router>
+        <RecoilRoot>
+          <FirebaseRoot>
+            <App />
+          </FirebaseRoot>
+        </RecoilRoot>
+      </Router>
+    </ThemeProvider>
+  );
+}
+
+export { Bootstrap };
