@@ -7,16 +7,17 @@ import {
   ListItemText,
   SvgIcon,
   Typography,
+  useTheme,
 } from '@mui/material';
 import type { LinkProps } from 'react-router-dom';
 import { Link, useMatch, useResolvedPath } from 'react-router-dom';
-import { theme } from 'theme';
 
 interface CustomLinkProps extends LinkProps {
   primary: string;
 }
 
 function CustomLink({ children, to, primary, ...props }: CustomLinkProps) {
+  const theme = useTheme();
   const activatedColor = theme.palette.primary.main;
   const resolved = useResolvedPath(to);
   const match = useMatch({ path: resolved.pathname, end: true });

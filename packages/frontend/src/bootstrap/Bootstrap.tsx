@@ -1,21 +1,20 @@
-import { ThemeProvider } from '@mui/material/styles';
 import { App } from 'App';
 import { BrowserRouter as Router } from 'react-router-dom';
 import { RecoilRoot } from 'recoil';
-import { theme } from 'theme';
 import { FirebaseRoot } from './Firebase';
+import { MaterialUIRoot } from './MaterialUI';
 
 function Bootstrap() {
   return (
-    <ThemeProvider theme={theme}>
-      <Router>
-        <RecoilRoot>
+    <RecoilRoot>
+      <MaterialUIRoot>
+        <Router>
           <FirebaseRoot>
             <App />
           </FirebaseRoot>
-        </RecoilRoot>
-      </Router>
-    </ThemeProvider>
+        </Router>
+      </MaterialUIRoot>
+    </RecoilRoot>
   );
 }
 
