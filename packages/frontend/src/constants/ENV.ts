@@ -1,8 +1,7 @@
 export const ENV = {
-  API_URL:
-    process.env.NODE_ENV === 'production'
-      ? 'https://server.alwayscoding.app'
-      : 'http://localhost:8000/dev',
+  API_URL: import.meta.env.PROD
+    ? 'https://server.alwayscoding.app'
+    : 'http://localhost:8000/dev',
   FIREBASE_CONFIG: {
     apiKey: 'AIzaSyDTpGKHDgE0KInk7EJ2pvu2h1rmATD9H18',
     authDomain: 'password-store-831e7.firebaseapp.com',
